@@ -4,7 +4,8 @@
 #
 #-------------------------------------------------
 
-QT       += core gui widgets network websockets
+QT += core gui widgets network websockets
+QT += winextras
 
 TARGET = SimpleRemoteDesktop
 TEMPLATE = app

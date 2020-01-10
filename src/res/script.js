@@ -37,11 +37,10 @@ var touchX = 0;
 var touchY = 0;
 var cursorPosX = 100;
 var cursorPosY = 100;
-var lastTouchTime = 0;
-var isTouchPressed = false;
 var isTouchMoved = false;
-var timeoutLongTouch;
-var timeoutDoubleTouch;
+var timeoutTouchCounter;
+var touchStepPress = 0;
+var touchStepRelease = 0;
 
 document.addEventListener("DOMContentLoaded", documentIsLoaded);
 
@@ -103,14 +102,10 @@ function touchPress(e)
     touchX = e.touches[0].pageX;
     touchY = e.touches[0].pageY;
 
-    isTouchPressed = true;
+    ++touchStepPress;
 
-    timeoutLongTouch = setTimeout(function()
-    {
-        isTouchPressed = false;
-        sendKeyState(KEY_SET_MOUSE_KEY,2,true);
-        sendKeyState(KEY_SET_MOUSE_KEY,2,false);
-    }, 400);
+    clearTimeout(timeoutTouchCounter);
+    timeoutTouchCounter = setTimeout(touchCounter,300);
 }
 
 function touchMove(e)
@@ -127,12 +122,11 @@ function touchMove(e)
     var deltaY = touchY - y;
 
     if(!isTouchMoved &&
-       (Math.abs(deltaX) < 2 ||
-        Math.abs(deltaY) < 2))
+       (Math.abs(deltaX) < 3 ||
+        Math.abs(deltaY) < 3))
         return;
 
     isTouchMoved = true;
-    clearTimeout(timeoutLongTouch);
 
     touchX = x;
     touchY = y;
@@ -147,31 +141,48 @@ function touchRelease(e)
 
     e.preventDefault();
 
-    if(isTouchPressed && ! isTouchMoved)
+    isTouchMoved = false;
+    ++touchStepRelease;
+
+    clearTimeout(timeoutTouchCounter);
+    timeoutTouchCounter = setTimeout(touchCounter,200);
+}
+
+function touchCounter()
+{
+    clearTimeout(timeoutTouchCounter);
+
+    if(!isTouchMoved)
     {
-        var currentTime = new Date().getTime();
-        var tapLength = currentTime - lastTouchTime;
-        clearTimeout(timeoutDoubleTouch);
-
-        if(tapLength <= 0 || tapLength > 400)
+        if(touchStepPress == 1 && touchStepRelease == 1)//Left click
         {
-            timeoutDoubleTouch = setTimeout(function()
-            {
-                clearTimeout(timeoutDoubleTouch);
-
-
-            }, 400);
+            sendKeyState(KEY_SET_MOUSE_KEY,0,true);
+            sendKeyState(KEY_SET_MOUSE_KEY,0,false);
         }
-
-        lastTouchTime = currentTime;
-
-        sendKeyState(KEY_SET_MOUSE_KEY,0,true);
-        sendKeyState(KEY_SET_MOUSE_KEY,0,false);
+        else if(touchStepPress == 2 && touchStepRelease == 2)//Double click
+        {
+            sendKeyState(KEY_SET_MOUSE_KEY,0,true);
+            sendKeyState(KEY_SET_MOUSE_KEY,0,false);
+            sendKeyState(KEY_SET_MOUSE_KEY,0,true);
+            sendKeyState(KEY_SET_MOUSE_KEY,0,false);
+        }
+        else if(touchStepPress == 1 && touchStepRelease == 0)//Right click
+        {
+            sendKeyState(KEY_SET_MOUSE_KEY,2,true);
+            sendKeyState(KEY_SET_MOUSE_KEY,2,false);
+        }
+        else if(touchStepPress == 2 && touchStepRelease == 1)//Left press
+        {
+            sendKeyState(KEY_SET_MOUSE_KEY,0,true);
+        }
+        else if(touchStepPress == 0 && touchStepRelease == 1)//Left press
+        {
+            sendKeyState(KEY_SET_MOUSE_KEY,0,false);
+        }
     }
 
-    clearTimeout(timeoutLongTouch);
-    isTouchPressed = false;
-    isTouchMoved = false;
+    touchStepPress = 0;
+    touchStepRelease = 0;
 }
 
 function leavePageEvent()
