@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Remote Desktop</title>
+    <meta name='viewport' content='width=device-width,user-scalable=no'>
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="stylesheet" href="style.css"/>
+
+</head>
+<body>
+
+    <div id="container">
+
+        <div id="topMenu">
+
+            <div id="btnEsc" class="key" num="27">
+                <svg width="24" height="24" viewBox="0 0 24 24">
+                    <text x="-10" y="20" font-size="24" fill="white">Esc</text>
+                </svg>
+            </div>
+            
+            <div id="btnShift" class="key" num="16">
+                <svg width="24" height="24" viewBox="0 0 24 24">
+                    <text x="-17" y="20" font-size="24" fill="white">Shift</text>
+                </svg>
+            </div>
+            
+            <div id="btnCtrl" class="key" num="17">
+                <svg width="24" height="24" viewBox="0 0 24 24">
+                    <text x="-12" y="20" font-size="24" fill="white">Ctrl</text>
+                </svg>
+            </div>
+
+            <div id="btnWin" class="key" num="91">
+                <svg width="24" height="24" viewBox="0 0 24 24">
+                    <path d="M1,5 L11,3 L11,11 L1,11Z M1,13z L11,13 L11,21 L1,19Z M13,13 L23,13 L23,22 L13,21Z M13,11 L13,3 L23,2 L23,11Z" fill="white"/>
+                </svg>
+            </div>
+
+            <div id="btnAlt" class="key" num="18">
+                <svg width="24" height="24" viewBox="0 0 24 24">
+                    <text x="-5" y="20" font-size="24" fill="white">Alt</text>
+                </svg>
+            </div>
+
+            <div id="btnChangeMonitor" class="key" title="Переключить монитор" num="1111">
+                <svg width="24" height="24" viewBox="0 0 24 24">
+                    <path d="M19,5 L23,5 L23,19 L14,19 L14,22 L21,23 L7,23 L14,22 L14,19 L5,19 L5,5 L19,5 L19,1 L1,1 L1,15 L5,15" stroke="white" stroke-width="2" fill="none"/>
+                </svg>
+            </div>
+
+            <div id="btnFullscrean" class="key" title="Развернуть на весь экран" num="1112">
+                <svg width="24" height="24" viewBox="0 0 24 24">
+                    <path d="M24 9h-4v-5h-5v-4h9v9zm-9 15v-4h5v-5h4v9h-9zm-15-9h4v5h5v4h-9v-9zm9-15v4h-5v5h-4v-9h9z" fill="white"/>
+                </svg>
+            </div>
+
+        </div>
+
+        <canvas id="canvas" width=1920 height=1280></canvas>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

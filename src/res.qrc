@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/">
+        <file>res/favicon.ico</file>
+        <file>res/index.html</file>
+        <file>res/script.js</file>
+        <file>res/style.css</file>
+    </qresource>
+</RCC>
