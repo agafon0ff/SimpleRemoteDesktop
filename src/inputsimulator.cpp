@@ -149,8 +149,9 @@ void InputSimulator::simulateWheelEvent(bool deltaPos)
 void InputSimulator::setMouseDelta(qint16 deltaX, qint16 deltaY)
 {
     QPoint cursorPos = QCursor::pos();
-    simulateMouseMove(static_cast<quint16>(cursorPos.x() - deltaX),
-                      static_cast<quint16>(cursorPos.y() - deltaY));
+    quint16 posX = static_cast<quint16>(cursorPos.x() - deltaX);
+    quint16 posY = static_cast<quint16>(cursorPos.y() - deltaY);
+    QCursor::setPos(posX,posY);
 }
 
 void InputSimulator::createKeysMap()

@@ -38,7 +38,7 @@ body, html {
     left: calc((100% / 2) - 120px);
     width: 240px;
     height: 23px;
-    z-index: 1;
+    z-index: 3;
 }
 
 .btn, .key {
@@ -73,6 +73,23 @@ body, html {
 #btnChangeMonitor {right: 24px;}
 #btnFullscrean {right: 0px;}
 
+#cursorContainer {
+    position: relative;
+    width: 1920px;
+    height: 1280px;
+    z-index: 1;
+}
+
+#cursor {
+    position: absolute;
+    margin: 0;
+    padding: 0;
+    width: 10px;
+    height: 10px;
+    z-index: 2;
+    visibility: hidden;
+}
+
 svg {
     display: block;
     position: relative;
@@ -80,4 +97,14 @@ svg {
     top: 4px;
     width: calc(100% - 8px);
     height: calc(100% - 8px);
+}
+
+svg#svgCursor {
+    position: absolute;
+    margin: 0;
+    padding: 0;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
 }

@@ -30,6 +30,8 @@ var lastTileReceived = false;
 var container;
 var canvas;
 var ctx;
+var cursorContainer;
+var cursor;
 var isFullScreen = false;
 var keyPressedList = [];
 
@@ -51,6 +53,8 @@ function documentIsLoaded()
     container = document.getElementById('container');
     canvas = document.getElementById('canvas');
     ctx = canvas.getContext('2d');
+    cursorContainer = document.getElementById('cursorContainer');
+    cursor = document.getElementById('cursor');
 
     window.addEventListener("contextmenu", function(event){event.preventDefault();});
     window.addEventListener("resize", updateSizes);
@@ -73,14 +77,16 @@ function documentIsLoaded()
             keys[j].addEventListener('touchstart', function(event){extraKeyStateChanged(this,true);});
             keys[j].addEventListener('touchend', function(event){extraKeyStateChanged(this,false);});
         }
+
+        cursor.style.visibility = "visible";
     }
     else
     {
-        canvas.addEventListener("mousedown", function(event){mouseKeyStateChanged(event,true);});
-        canvas.addEventListener("mouseup", function(event){mouseKeyStateChanged(event,false);});
+        cursorContainer.addEventListener("mousedown", function(event){mouseKeyStateChanged(event,true);});
+        cursorContainer.addEventListener("mouseup", function(event){mouseKeyStateChanged(event,false);});
 
-        canvas.addEventListener('wheel', mouseWheelEvent);
-        canvas.addEventListener('mousemove', cursorPosChanged);
+        cursorContainer.addEventListener('wheel', mouseWheelEvent);
+        cursorContainer.addEventListener('mousemove', cursorPosChanged);
 
         for(var i=0;i<keys.length;++i) {
             keys[i].addEventListener('mousedown', function(event){extraKeyStateChanged(this,true);});
@@ -105,7 +111,7 @@ function touchPress(e)
     ++touchStepPress;
 
     clearTimeout(timeoutTouchCounter);
-    timeoutTouchCounter = setTimeout(touchCounter,300);
+    timeoutTouchCounter = setTimeout(touchCounter,500);
 }
 
 function touchMove(e)
@@ -122,8 +128,8 @@ function touchMove(e)
     var deltaY = touchY - y;
 
     if(!isTouchMoved &&
-       (Math.abs(deltaX) < 3 ||
-        Math.abs(deltaY) < 3))
+       (Math.abs(deltaX) < 2 ||
+        Math.abs(deltaY) < 2))
         return;
 
     isTouchMoved = true;
@@ -131,7 +137,22 @@ function touchMove(e)
     touchX = x;
     touchY = y;
 
-    sendCursorChanged(KEY_SET_CURSOR_DELTA,deltaX,deltaY);
+    cursorPosX = cursorPosX - deltaX;
+    cursorPosY = cursorPosY - deltaY;
+
+    if(cursorPosX < 0)cursorPosX = 0;
+    else if(cursorPosX > canvasRect.w)cursorPosX = canvasRect.w;
+
+    if(cursorPosY < 0)cursorPosY = 0;
+    else if(cursorPosY > canvasRect.h)cursorPosY = canvasRect.h;
+
+    cursor.style.left = cursorPosX + "px";
+    cursor.style.top = cursorPosY + "px";
+
+    var posX = imageWidth / canvasRect.w * (cursorPosX);
+    var posY = imageHeight / canvasRect.h * (cursorPosY);
+
+    sendCursorChanged(KEY_SET_CURSOR_POS,posX,posY);
 }
 
 function touchRelease(e)
@@ -141,11 +162,15 @@ function touchRelease(e)
 
     e.preventDefault();
 
-    isTouchMoved = false;
-    ++touchStepRelease;
+    if(!isTouchMoved)
+    {
+        ++touchStepRelease;
 
-    clearTimeout(timeoutTouchCounter);
-    timeoutTouchCounter = setTimeout(touchCounter,200);
+        clearTimeout(timeoutTouchCounter);
+        timeoutTouchCounter = setTimeout(touchCounter,300);
+    }
+
+    isTouchMoved = false;
 }
 
 function touchCounter()
@@ -333,6 +358,11 @@ function updateSizes()
     canvas.style.top = rect.y + "px";
     canvas.style.width = rect.w + "px";
     canvas.style.height = rect.h + "px";
+
+    cursorContainer.style.left = rect.x + "px";
+    cursorContainer.style.top = rect.y + "px";
+    cursorContainer.style.width = rect.w + "px";
+    cursorContainer.style.height = rect.h + "px";
 
     canvasRect = rect;
 }
