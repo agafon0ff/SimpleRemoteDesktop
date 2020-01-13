@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+    <title>Keyboard</title>
+    <meta name='viewport' content='width=device-width,user-scalable=no'>
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+	
+	<style>
+	
+		body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            -moz-user-select: none; 
+            -o-user-select: none; 
+            -khtml-user-select: none; 
+            -webkit-user-select: none; 
+            -ms-user-select: none; 
+            user-select: none;
+        }
+        
+        #container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: #222;
+        }
+	
+		.key {
+            position: absolute;
+            width: 6.4%;
+            height: 15.8%;
+            background: none;
+            border: 1px solid #aaa;
+            border-radius: 5px;
+            color: #eee;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 0 2px #eee;
+        }
+        
+        .key p {
+            margin: 0;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            margin-right: -50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+		
+		.key:active {background: #aaa;}
+        
+        span {pointer-events: none;}
+
+        .ru {color: #DFDF57;}
+        
+        #key_esc {left: 0%; top: 0.7%; width: 6.4%; height: 13.1%;}
+        #key_f1 {left: 6.8%; top: 0.7%; width: 5.3%; height: 13.1%;}
+        #key_f2 {left: 12.5%; top: 0.7%; width: 5.3%; height: 13.1%;}
+        #key_f3 {left: 18.26%; top: 0.7%; width: 5.3%; height: 13.1%;}
+        #key_f4 {left: 24%; top: 0.7%; width: 5.3%; height: 13.1%;}
+        #key_f5 {left: 29.7%; top: 0.7%; width: 5.3%; height: 13.1%;}
+        #key_f6 {left: 35.45%; top: 0.7%; width: 5.3%; height: 13.1%;}
+        #key_f7 {left: 41.1%; top: 0.7%; width: 5.3%; height: 13.1%;}
+        #key_f8 {left: 46.8%; top: 0.7%; width: 5.3%; height: 13.1%;}
+        #key_f9 {left: 52.5%; top: 0.7%; width: 5.3%; height: 13.1%;}
+        #key_f10 {left: 58.2%; top: 0.7%; width: 5.3%; height: 13.1%;}
+        #key_f11 {left: 63.9%; top: 0.7%; width: 5.3%; height: 13.1%;}
+        #key_f12 {left: 69.65%; top: 0.7%; width: 5.3%; height: 13.1%;}
+        #key_pb {left: 75.3%; top: 0.7%; width: 5.3%; height: 13.1%;}
+        #key_ps {left: 81%; top: 0.7%; width: 5.3%; height: 13.1%;}
+        #key_ins {left: 86.7%; top: 0.7%; width: 5.3%; height: 13.1%;}
+        #key_del {left: 92.4%; top: 0.7%; width: 7.2%; height: 13.1%;}
+        
+        
+        #key_til {left: 0%; top: 15%;}
+        #key_1 {left: 6.9%; top: 15%;}
+        #key_2 {left: 13.9%; top: 15%;}
+        #key_3 {left: 20.9%; top: 15%;}
+        #key_4 {left: 27.85%; top: 15%;}
+        #key_5 {left: 34.75%; top: 15%;}
+        #key_6 {left: 41.75%; top: 15%;}
+        #key_7 {left: 48.75%; top: 15%;}
+        #key_8 {left: 55.7%; top: 15%;}
+        #key_9 {left: 62.7%; top: 15%;}
+        #key_0 {left: 69.65%; top: 15%;}
+        #key_minus {left: 76.55%; top: 15%;}
+        #key_equal {left: 83.55%; top: 15%;}
+        #key_bkspc {left: 90.55%; top: 15%; width: 9%;}
+        
+        #key_tab {left: 0%; top: 32%; width: 7.7%;}
+        #key_q {left: 8.1%; top: 32%;}
+        #key_w {left: 15.1%; top: 32%;}
+        #key_e {left: 22.1%; top: 32%;}
+        #key_r {left: 29.1%; top: 32%;}
+        #key_t {left: 36.15%; top: 32%;}
+        #key_y {left: 43.15%; top: 32%;}
+        #key_u {left: 50.15%; top: 32%;}
+        #key_i {left: 57.1%; top: 32%;}
+        #key_o {left: 64.1%; top: 32%;}
+        #key_p {left: 71.1%; top: 32%;}
+        #key_lbr {left: 78.05%; top: 32%;}
+        #key_rbr {left: 84.95%; top: 32%;}
+        #key_enter {left: 91.95%; top: 32%; width: 7.3%; height: 33.1%;}
+        
+        #key_cl {left: 0%; top: 49%; width: 7.6%;}
+        #key_a {left: 8.1%; top: 49%;}
+        #key_s {left: 15.1%; top: 49%;}
+        #key_d {left: 22.1%; top: 49%;}
+        #key_f {left: 29.1%; top: 49%;}
+        #key_g {left: 36.15%; top: 49%;}
+        #key_h {left: 43.15%; top: 49%;}
+        #key_j {left: 50.15%; top: 49%;}
+        #key_k {left: 57.1%; top: 49%;}
+        #key_l {left: 64.1%; top: 49%;}
+        #key_sc {left: 71.1%; top: 49%;}
+        #key_ap {left: 78.05%; top: 49%;}
+        #key_lsl {left: 84.95%; top: 49%;}
+        
+        #key_lsh {left: 0%; top: 66%; width: 8.9%;}
+        #key_z {left: 9.3%; top: 66%;}
+        #key_x {left: 16.25%; top: 66%;}
+        #key_c {left: 23.2%; top: 66%;}
+        #key_v {left: 30.2%; top: 66%;}
+        #key_b {left: 37.2%; top: 66%;}
+        #key_n {left: 44.2%; top: 66%;}
+        #key_m {left: 51.2%; top: 66%;}
+        #key_comma {left: 58.1%; top: 66%;}
+        #key_dot {left: 65.1%; top: 66%;}
+        #key_rsl {left: 72.1%; top: 66%;}
+        #key_rsh {left: 79.1%; top: 66%; width: 13.4%;}
+        #key_up {left: 93.1%; top: 66%;}
+        
+        #key_lctr {left: 0%; top: 83%;}
+        #key_win {left: 6.9%; top: 83%;}
+        #key_lalt {left: 13.9%; top: 83%;}
+        #key_space {left: 20.9%; top: 83%; width: 36.7%;}
+        #key_ralt {left: 58.1%; top: 83%;}
+        #key_menu {left: 65.1%; top: 83%;}
+        #key_rctr {left: 72.1%; top: 83%;}
+        #key_left {left: 79.1%; top: 83%;}
+        #key_down {left: 86.1%; top: 83%;}
+        #key_right {left: 93.1%; top: 83%;}
+        
+		svg {
+			display: block;
+			position: absolute;
+			width: 100%;
+			height: 100%;
+			fill: white;
+		}
+		
+    </style>
+    
+</head>
+<body>
+    <div id="container">
+        <div id="keyboard">
+		
+            <div class="key" id="key_esc" num="0x1B"><svg viewBox="0 0 24 24"><text x="5" y="15" font-size="9">Esc</text></svg></div>
+            <div class="key" id="key_f1" num="0x70"><svg viewBox="0 0 24 24"><text x="7" y="15" font-size="9">F1</text></svg></div>
+            <div class="key" id="key_f2" num="0x71"><svg viewBox="0 0 24 24"><text x="7" y="15" font-size="9">F2</text></svg></div>
+            <div class="key" id="key_f3" num="0x72"><svg viewBox="0 0 24 24"><text x="7" y="15" font-size="9">F3</text></svg></div>
+            <div class="key" id="key_f4" num="0x73"><svg viewBox="0 0 24 24"><text x="7" y="15" font-size="9">F4</text></svg></div>
+            <div class="key" id="key_f5" num="0x74"><svg viewBox="0 0 24 24"><text x="7" y="15" font-size="9">F5</text></svg></div>
+            <div class="key" id="key_f6" num="0x75"><svg viewBox="0 0 24 24"><text x="7" y="15" font-size="9">F6</text></svg></div>
+            <div class="key" id="key_f7" num="0x76"><svg viewBox="0 0 24 24"><text x="7" y="15" font-size="9">F7</text></svg></div>
+            <div class="key" id="key_f8" num="0x77"><svg viewBox="0 0 24 24"><text x="7" y="15" font-size="9">F8</text></svg></div>
+            <div class="key" id="key_f9" num="0x78"><svg viewBox="0 0 24 24"><text x="7" y="15" font-size="9">F9</text></svg></div>
+            <div class="key" id="key_f10" num="0x79"><svg viewBox="0 0 24 24"><text x="5" y="15" font-size="9">F10</text></svg></div>
+            <div class="key" id="key_f11" num="0x7A"><svg viewBox="0 0 24 24"><text x="5" y="15" font-size="9">F11</text></svg></div>
+            <div class="key" id="key_f12" num="0x7B"><svg viewBox="0 0 24 24"><text x="5" y="15" font-size="9">F12</text></svg></div>
+            <div class="key" id="key_pb" num="0x13"><svg viewBox="0 0 24 24"><text x="2" y="15" font-size="8">Pause</text></svg></div>
+			
+            <div class="key" id="key_ps" num="0x2C"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="3">Print</tspan><tspan x="0" dy="1em">Screen</tspan></text></svg></div>
+			<div class="key" id="key_ins" num="0x2D"><svg viewBox="0 0 24 24"><text x="2" y="15" font-size="8">Insert</text></svg></div>
+            <div class="key" id="key_del" num="0x2E"><svg viewBox="0 0 24 24"><text x="2" y="15" font-size="7.5">Delete</text></svg></div>
+
+			<div class="key" id="key_til" num="0xC0"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">~</tspan><tspan x="5" dy="1em">`</tspan><tspan x="12">Ё</tspan></text></svg></div>
+			<div class="key" id="key_1" num="0x31"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="9">!</tspan><tspan x="9" dy="1.2em" fill="#DFDF57">1</tspan></text></svg></div>
+			<div class="key" id="key_2" num="0x32"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">@ "</tspan><tspan x="9" dy="1.2em" fill="#DFDF57">2</tspan></text></svg></div>
+			<div class="key" id="key_3" num="0x33"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5"># №</tspan><tspan x="9" dy="1.2em" fill="#DFDF57">3</tspan></text></svg></div>
+			<div class="key" id="key_4" num="0x34"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">$ ;</tspan><tspan x="9" dy="1.2em" fill="#DFDF57">4</tspan></text></svg></div>
+            <div class="key" id="key_5" num="0x35"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">%</tspan><tspan x="9" dy="1.2em" fill="#DFDF57">5</tspan></text></svg></div>
+            <div class="key" id="key_6" num="0x36"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">^ :</tspan><tspan x="9" dy="1.2em" fill="#DFDF57">6</tspan></text></svg></div>
+            <div class="key" id="key_7" num="0x37"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">& ?</tspan><tspan x="9" dy="1.2em" fill="#DFDF57">7</tspan></text></svg></div>
+            <div class="key" id="key_8" num="0x38"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="9">*</tspan><tspan x="9" dy="1.2em" fill="#DFDF57">8</tspan></text></svg></div>
+            <div class="key" id="key_9" num="0x39"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="9">(</tspan><tspan x="9" dy="1.2em" fill="#DFDF57">9</tspan></text></svg></div>
+            <div class="key" id="key_0" num="0x30"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="9">)</tspan><tspan x="9" dy="1.2em" fill="#DFDF57">0</tspan></text></svg></div>
+            
+			<div class="key" id="key_minus" num="0xBD"><svg viewBox="0 0 24 24"><text y="10" font-size="9"><tspan x="9">_</tspan><tspan x="9" dy="1.2em">-</tspan></text></svg></div>
+            <div class="key" id="key_equal" num="0xBB"><svg viewBox="0 0 24 24"><text y="10" font-size="9"><tspan x="9">+</tspan><tspan x="9" dy="1.2em">=</tspan></text></svg></div>
+            <div class="key" id="key_bkspc" num="0x08"><svg viewBox="0 0 24 24"><text x="4" y="15" font-size="7">Bksp</text></svg></div>
+            
+            <div class="key" id="key_tab" num="0x09"><svg viewBox="0 0 24 24"><text x="5" y="15" font-size="7.5">Tab</text></svg></div>
+            <div class="key" id="key_q" num="0x51"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">Q</tspan><tspan x="13" dy="1.2em" fill="#DFDF57">Й</tspan></text></svg></div>
+            <div class="key" id="key_w" num="0x57"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">W</tspan><tspan x="13" dy="1.2em" fill="#DFDF57">Ц</tspan></text></svg></div>
+            <div class="key" id="key_e" num="0x45"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">E</tspan><tspan x="13" dy="1.2em" fill="#DFDF57">У</tspan></text></svg></div>
+            <div class="key" id="key_r" num="0x52"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">R</tspan><tspan x="13" dy="1.2em" fill="#DFDF57">К</tspan></text></svg></div>
+            <div class="key" id="key_t" num="0x54"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">T</tspan><tspan x="13" dy="1.2em" fill="#DFDF57">Е</tspan></text></svg></div>
+            <div class="key" id="key_y" num="0x59"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">Y</tspan><tspan x="13" dy="1.2em" fill="#DFDF57">Н</tspan></text></svg></div>
+            <div class="key" id="key_u" num="0x55"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">U</tspan><tspan x="13" dy="1.2em" fill="#DFDF57">Г</tspan></text></svg></div>
+            <div class="key" id="key_i" num="0x49"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">I</tspan><tspan x="13" dy="1.2em" fill="#DFDF57">Ш</tspan></text></svg></div>
+            <div class="key" id="key_o" num="0x4F"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">O</tspan><tspan x="13" dy="1.2em" fill="#DFDF57">Щ</tspan></text></svg></div>
+            <div class="key" id="key_p" num="0x50"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">P</tspan><tspan x="13" dy="1.2em" fill="#DFDF57">З</tspan></text></svg></div>
+            <div class="key" id="key_lbr" num="0xDB"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">{</tspan><tspan x="5" dy="1.2em">[</tspan><tspan x="13" fill="#DFDF57">Х</tspan></text></svg></div>
+            <div class="key" id="key_rbr" num="0xDD"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">}</tspan><tspan x="5" dy="1.2em">]</tspan><tspan x="13" fill="#DFDF57">Ъ</tspan></text></svg></div>
+            <div class="key" id="key_enter" num="0x0D"><svg viewBox="0 0 24 24"><text x="4" y="10" font-size="6.5">Enter</text></svg></div>
+            
+            <div class="key" id="key_cl" num="0x14"><svg viewBox="0 0 24 24"><text y="10" font-size="7.5"><tspan x="4">Caps</tspan><tspan x="4" dy="1.2em">Lock</tspan></text></svg></div>
+            <div class="key" id="key_a" num="0x41"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">A</tspan><tspan x="9" dy="1.2em" fill="#DFDF57">Ф</tspan></text></svg></div>
+            <div class="key" id="key_s" num="0x53"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">S</tspan><tspan x="9" dy="1.2em" fill="#DFDF57">Ы</tspan></text></svg></div>
+            <div class="key" id="key_d" num="0x44"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">D</tspan><tspan x="9" dy="1.2em" fill="#DFDF57">В</tspan></text></svg></div>
+            <div class="key" id="key_f" num="0x46"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">F</tspan><tspan x="9" dy="1.2em" fill="#DFDF57">А</tspan></text></svg></div>
+            <div class="key" id="key_g" num="0x47"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">G</tspan><tspan x="9" dy="1.2em" fill="#DFDF57">П</tspan></text></svg></div>
+            <div class="key" id="key_h" num="0x48"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">H</tspan><tspan x="9" dy="1.2em" fill="#DFDF57">Р</tspan></text></svg></div>
+            <div class="key" id="key_j" num="0x4A"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">J</tspan><tspan x="9" dy="1.2em" fill="#DFDF57">О</tspan></text></svg></div>
+            <div class="key" id="key_k" num="0x4B"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">K</tspan><tspan x="9" dy="1.2em" fill="#DFDF57">Л</tspan></text></svg></div>
+            <div class="key" id="key_l" num="0x4C"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">L</tspan><tspan x="9" dy="1.2em" fill="#DFDF57">Д</tspan></text></svg></div>
+            <div class="key" id="key_sc" num="0xBA"><svg viewBox="0 0 24 24"><text y="9" font-size="8"><tspan x="5">:</tspan><tspan x="5" dy="1.2em">;</tspan><tspan x="13" fill="#DFDF57">Ж</tspan></text></svg></div>
+            <div class="key" id="key_ap" num="0xDE"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">"</tspan><tspan x="5" dy="1.2em">'</tspan><tspan x="13" fill="#DFDF57">Э</tspan></text></svg></div>
+            <div class="key" id="key_lsl" num="0xDC"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">|</tspan><tspan x="5" dy="1.2em">\</tspan><tspan x="13" fill="#DFDF57">/</tspan></text></svg></div>
+            
+            <div class="key" id="key_lsh" num="0xA0"><svg viewBox="0 0 24 24"><text x="3" y="15" font-size="8">Shift</text></svg></div>
+            <div class="key" id="key_z" num="0x5A"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">Z</tspan><tspan x="9" dy="1.2em" fill="#DFDF57">Я</tspan></text></svg></div>
+            <div class="key" id="key_x" num="0x58"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">X</tspan><tspan x="9" dy="1.2em" fill="#DFDF57">Ч</tspan></text></svg></div>
+            <div class="key" id="key_c" num="0x43"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">C</tspan><tspan x="9" dy="1.2em" fill="#DFDF57">С</tspan></text></svg></div>
+            <div class="key" id="key_v" num="0x56"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">V</tspan><tspan x="9" dy="1.2em" fill="#DFDF57">М</tspan></text></svg></div>
+            <div class="key" id="key_b" num="0x42"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">B</tspan><tspan x="9" dy="1.2em" fill="#DFDF57">И</tspan></text></svg></div>
+            <div class="key" id="key_n" num="0x4E"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">N</tspan><tspan x="9" dy="1.2em" fill="#DFDF57">Т</tspan></text></svg></div>
+            <div class="key" id="key_m" num="0x4D"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">M</tspan><tspan x="9" dy="1.2em" fill="#DFDF57">Ь</tspan></text></svg></div>
+            <div class="key" id="key_comma" num="0xBC"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">&#60;</tspan><tspan x="5" dy="1.2em">,</tspan><tspan x="13" fill="#DFDF57">Б</tspan></text></svg></div>
+            <div class="key" id="key_dot" num="0xBE"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">&#62;</tspan><tspan x="5" dy="1.2em">.</tspan><tspan x="13" fill="#DFDF57">Ю</tspan></text></svg></div>
+            <div class="key" id="key_rsl" num="0xBF"><svg viewBox="0 0 24 24"><text y="10" font-size="8"><tspan x="5">?</tspan><tspan x="13" fill="#DFDF57">,</tspan><tspan x="5" dy="1.2em">/</tspan><tspan x="13" fill="#DFDF57">.</tspan></text></svg></div>
+            <div class="key" id="key_rsh" num="0xA1"><svg viewBox="0 0 24 24"><text x="3" y="15" font-size="8">Shift</text></svg></div>
+            <div class="key" id="key_up" num="0x26"><svg viewBox="0 0 24 24"><text x="10" y="15" font-size="8">&#8593;</text></svg></div>
+            
+            <div class="key" id="key_lctr" num="0xA2"><svg viewBox="0 0 24 24"><text x="4" y="15" font-size="8">Ctrl</text></svg></div>
+            <div class="key" id="key_win" num="0x5B"><svg viewBox="0 0 24 24"><text x="4" y="15" font-size="8">Win</text></svg></div>
+            <div class="key" id="key_lalt" num="0x12"><svg viewBox="0 0 24 24"><text x="4" y="15" font-size="8">Alt</text></svg></div>
+            <div class="key" id="key_space" num="0x20"><svg viewBox="0 0 24 24"><text x="4" y="15" font-size="8"> </text></svg></div>
+            <div class="key" id="key_ralt" num="0x12"><svg viewBox="0 0 24 24"><text x="4" y="15" font-size="8">Alt</text></svg></div>
+            <div class="key" id="key_menu" num="0xA5"><svg viewBox="0 0 24 24"><text x="8" y="15" font-size="8">&#926;</text></svg></div>
+            <div class="key" id="key_rctr" num="0xA3"><svg viewBox="0 0 24 24"><text x="4" y="15" font-size="8">Ctrl</text></svg></div>
+            <div class="key" id="key_left" num="0x25"><svg viewBox="0 0 24 24"><text x="8" y="15" font-size="8">&#8592;</text></svg></div>
+            <div class="key" id="key_down" num="0x28"><svg viewBox="0 0 24 24"><text x="10" y="15" font-size="8">&#8595;</text></svg></div>
+            <div class="key" id="key_right" num="0x27"><svg viewBox="0 0 24 24"><text x="8" y="15" font-size="8">&#8594;</text></svg></div>
+            
+        </div>
+    </div>
+	
+	</body>
+</html>

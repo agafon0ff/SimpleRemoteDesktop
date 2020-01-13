@@ -74,6 +74,6 @@ void ServerWeb::textData(const QString &text)
 
 void ServerWeb::binData(const QByteArray &buf)
 {
-    qDebug()<<"ServerWeb::binData"<<buf;
+//    qDebug()<<"ServerWeb::binData"<<buf;
     emit dataFromSocket(buf);
 }
