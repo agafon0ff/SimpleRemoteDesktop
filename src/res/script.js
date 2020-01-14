@@ -1,4 +1,5 @@
 var webSocket;
+var xmlHttpRequest;
 var isConnected = false;
 var isMobilePhone = false
 
@@ -32,6 +33,7 @@ var canvas;
 var ctx;
 var cursorContainer;
 var cursor;
+var keyboard;
 var isFullScreen = false;
 var keyPressedList = [];
 
@@ -43,6 +45,11 @@ var isTouchMoved = false;
 var timeoutTouchCounter;
 var touchStepPress = 0;
 var touchStepRelease = 0;
+var isExtrakeyStateChanged = false;
+
+var lastHttpRequest = '';
+var isKeyboardLoaded = false;
+var isKeyboardHidden = true;
 
 document.addEventListener("DOMContentLoaded", documentIsLoaded);
 
@@ -55,6 +62,7 @@ function documentIsLoaded()
     ctx = canvas.getContext('2d');
     cursorContainer = document.getElementById('cursorContainer');
     cursor = document.getElementById('cursor');
+    keyboard = document.getElementById('keyboard');
 
     window.addEventListener("contextmenu", function(event){event.preventDefault();});
     window.addEventListener("resize", updateSizes);
@@ -65,7 +73,7 @@ function documentIsLoaded()
 
     console.log("isMobilePhone",isMobilePhone);
 
-    var keys = document.getElementsByClassName('key');
+    var extraKeys = document.getElementsByClassName('extraKey');
 
     if(isMobilePhone)
     {
@@ -73,9 +81,9 @@ function documentIsLoaded()
         container.addEventListener("touchmove", touchMove, false);
         container.addEventListener("touchend", touchRelease, false);
 
-        for(var j=0;j<keys.length;++j) {
-            keys[j].addEventListener('touchstart', function(event){extraKeyStateChanged(this,true);});
-            keys[j].addEventListener('touchend', function(event){extraKeyStateChanged(this,false);});
+        for(var j=0;j<extraKeys.length;++j) {
+            extraKeys[j].addEventListener('touchstart', function(event){extraKeyStateChanged(this,true);});
+            extraKeys[j].addEventListener('touchend', function(event){extraKeyStateChanged(this,false);});
         }
 
         cursor.style.visibility = "visible";
@@ -88,20 +96,24 @@ function documentIsLoaded()
         cursorContainer.addEventListener('wheel', mouseWheelEvent);
         cursorContainer.addEventListener('mousemove', cursorPosChanged);
 
-        for(var i=0;i<keys.length;++i) {
-            keys[i].addEventListener('mousedown', function(event){extraKeyStateChanged(this,true);});
-            keys[i].addEventListener('mouseup', function(event){extraKeyStateChanged(this,false);});
+        for(var i=0;i<extraKeys.length;++i) {
+            extraKeys[i].addEventListener('mousedown', function(event){extraKeyStateChanged(this,true);});
+            extraKeys[i].addEventListener('mouseup', function(event){extraKeyStateChanged(this,false);});
         }
     }
 
     startSocket();
+    startXmlHttpRequest();
     updateSizes();
 }
 
 function touchPress(e)
 {
-    if(e.target.classList.contains("key"))
+    if(e.target.classList.contains("extraKey") || isExtrakeyStateChanged)
+    {
+        isExtrakeyStateChanged = false;
         return;
+    }
 
     e.preventDefault();
 
@@ -116,8 +128,11 @@ function touchPress(e)
 
 function touchMove(e)
 {
-    if(e.target.classList.contains("key"))
+    if(e.target.classList.contains("extraKey") || isExtrakeyStateChanged)
+    {
+        isExtrakeyStateChanged = false;
         return;
+    }
 
     e.preventDefault();
 
@@ -157,8 +172,11 @@ function touchMove(e)
 
 function touchRelease(e)
 {
-    if(e.target.classList.contains("key"))
+    if(e.target.classList.contains("extraKey") || isExtrakeyStateChanged)
+    {
+        isExtrakeyStateChanged = false;
         return;
+    }
 
     e.preventDefault();
 
@@ -390,6 +408,23 @@ function openInNewWindow()
     window.open('/','Simple Remote Desktop',params);
 }
 
+function showKeyboard()
+{
+    if(!isKeyboardLoaded)
+    {
+        lastHttpRequest = 'keyboard';
+        sendToXmlHttpRequest('GET', 'keyboard.html', '');
+    }
+    else
+    {
+        if(isKeyboardHidden)
+            keyboard.style.visibility = "visible";
+        else keyboard.style.visibility = "hidden";
+
+        isKeyboardHidden = !isKeyboardHidden;
+    }
+}
+
 function showFulScreen()
 {
     if(!isFullScreen)
@@ -453,12 +488,16 @@ function mouseKeyStateChanged(event, state)
 
 function extraKeyStateChanged(key,state)
 {
+    isExtrakeyStateChanged = true;
+
     var num = key.getAttribute("num");
 
     if(num === "1111")
     {if(state)changeDisplayNumber();}
     else if(num === "1112")
     {if(state)showFulScreen();}
+    else if(num === "1113")
+    {if(state)showKeyboard();}
     else {sendKeyState(KEY_SET_KEY_STATE,num,state);}
 }
 
@@ -537,6 +576,31 @@ function sendCursorChanged(key, x, y)
 
     sendToSocket(buf);
 }
+
+// ________________ XMLHttpRequest ________________
+function startXmlHttpRequest()
+{
+    xmlHttpRequest = new XMLHttpRequest();
+    xmlHttpRequest.onload = function(){readFromXmlHttpRequest(xmlHttpRequest.responseText);};
+}
+
+function readFromXmlHttpRequest(data)
+{
+    if(lastHttpRequest === 'keyboard')
+    {
+        isKeyboardLoaded = true;
+        isKeyboardHidden = false;
+        lastHttpRequest = '';
+        keyboard.innerHTML = data;
+    }
+}
+
+function sendToXmlHttpRequest(method, request, data)
+{
+    xmlHttpRequest.open(method, request);
+    xmlHttpRequest.send(data);
+}
+// ________________________________________________
 
 function Rect(x, y, w, h)
 {

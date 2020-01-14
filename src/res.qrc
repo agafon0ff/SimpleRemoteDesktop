@@ -4,5 +4,6 @@
         <file>res/index.html</file>
         <file>res/script.js</file>
         <file>res/style.css</file>
+        <file>res/keyboard.html</file>
     </qresource>
 </RCC>
