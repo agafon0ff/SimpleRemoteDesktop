@@ -11,6 +11,7 @@ var KEY_SET_MOUSE_KEY = new Uint8Array([83,77,75,83]); //SMKS
 var KEY_SET_MOUSE_WHEEL = new Uint8Array([83,77,87,72]); //SMWH
 var KEY_SET_KEY_STATE = new Uint8Array([83,75,83,84]); //"SKST";
 var KEY_CHANGE_DISPLAY = new Uint8Array([67,72,68,80]); //"CHDP";
+var KEY_DEBUG = new Uint8Array([68,66,85,71]); //"DBUG";
 
 var KEY_IMAGE_PARAM = "73,77,71,80";//new Uint8Array([73,77,71,80]); //ascii: "IMGP";
 var KEY_IMAGE_TILE = "73,77,71,84";//IMGT
@@ -24,7 +25,8 @@ var dataTmp = new Uint8Array;
 var imageWidth = 1920;
 var imageHeight = 1280;
 
-var canvasRect = new Rect(0,0,1920,1280);
+var canvasRect = new Rect(0,0,imageWidth,imageHeight);
+var transformRect = new Rect(0,0,imageWidth,imageHeight);
 
 var rectWidth = 100;
 var lastTileReceived = false;
@@ -45,6 +47,7 @@ var isTouchMoved = false;
 var timeoutTouchCounter;
 var touchStepPress = 0;
 var touchStepRelease = 0;
+var touchDistance = 0;
 var isExtrakeyStateChanged = false;
 
 var lastHttpRequest = '';
@@ -65,7 +68,7 @@ function documentIsLoaded()
     keyboard = document.getElementById('keyboard');
 
     window.addEventListener("contextmenu", function(event){event.preventDefault();});
-    window.addEventListener("resize", updateSizes);
+    window.addEventListener("resize", function(event){updateTransformRect(); updateSizes();});
     window.addEventListener("blur", leavePageEvent);
 
     window.addEventListener("keydown", function(event){keyStateChanged(event,true);});
@@ -104,6 +107,7 @@ function documentIsLoaded()
 
     startSocket();
     startXmlHttpRequest();
+    updateTransformRect();
     updateSizes();
 }
 
@@ -117,13 +121,16 @@ function touchPress(e)
 
     e.preventDefault();
 
-    touchX = e.touches[0].pageX;
-    touchY = e.touches[0].pageY;
+    if(e.touches.length === 1)
+    {
+        touchX = e.touches[0].pageX;
+        touchY = e.touches[0].pageY;
 
-    ++touchStepPress;
+        ++touchStepPress;
 
-    clearTimeout(timeoutTouchCounter);
-    timeoutTouchCounter = setTimeout(touchCounter,500);
+        clearTimeout(timeoutTouchCounter);
+        timeoutTouchCounter = setTimeout(touchCounter,500);
+    }
 }
 
 function touchMove(e)
@@ -136,38 +143,82 @@ function touchMove(e)
 
     e.preventDefault();
 
-    var x = e.touches[0].pageX;
-    var y = e.touches[0].pageY;
+    if(e.touches.length === 1)
+    {
+        var x = e.touches[0].pageX;
+        var y = e.touches[0].pageY;
 
-    var deltaX = touchX - x;
-    var deltaY = touchY - y;
+        var deltaX = touchX - x;
+        var deltaY = touchY - y;
 
-    if(!isTouchMoved &&
-       (Math.abs(deltaX) < 2 ||
-        Math.abs(deltaY) < 2))
-        return;
+        if(!isTouchMoved &&
+           (Math.abs(deltaX) < 2 ||
+            Math.abs(deltaY) < 2))
+            return;
 
-    isTouchMoved = true;
+        isTouchMoved = true;
 
-    touchX = x;
-    touchY = y;
+        touchX = x;
+        touchY = y;
 
-    cursorPosX = cursorPosX - deltaX;
-    cursorPosY = cursorPosY - deltaY;
+        cursorPosX = cursorPosX - deltaX;
+        cursorPosY = cursorPosY - deltaY;
 
-    if(cursorPosX < 0)cursorPosX = 0;
-    else if(cursorPosX > canvasRect.w)cursorPosX = canvasRect.w;
+        if(cursorPosX < 0)cursorPosX = 0;
+        else if(cursorPosX > canvasRect.w)cursorPosX = canvasRect.w;
 
-    if(cursorPosY < 0)cursorPosY = 0;
-    else if(cursorPosY > canvasRect.h)cursorPosY = canvasRect.h;
+        if(cursorPosY < 0)cursorPosY = 0;
+        else if(cursorPosY > canvasRect.h)cursorPosY = canvasRect.h;
 
-    cursor.style.left = cursorPosX + "px";
-    cursor.style.top = cursorPosY + "px";
+        cursor.style.left = cursorPosX + "px";
+        cursor.style.top = cursorPosY + "px";
 
-    var posX = imageWidth / canvasRect.w * (cursorPosX);
-    var posY = imageHeight / canvasRect.h * (cursorPosY);
+        var posX = imageWidth / canvasRect.w * (cursorPosX);
+        var posY = imageHeight / canvasRect.h * (cursorPosY);
 
-    sendCursorChanged(KEY_SET_CURSOR_POS,posX,posY);
+        sendCursorChanged(KEY_SET_CURSOR_POS,posX,posY);
+    }
+    else if(e.touches.length === 2)
+    {
+        var x1 = e.touches[0].pageX;
+        var y1 = e.touches[0].pageY;
+
+        var x2 = e.touches[1].pageX;
+        var y2 = e.touches[1].pageY;
+
+        var distance = Math.sqrt(((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1)));
+
+        var scaleSize = 0;
+
+        if(distance > touchDistance)
+            scaleSize = 10;
+        if(distance < touchDistance)
+            scaleSize = -10;
+
+        var percentX = 1 / canvasRect.w * cursorPosX;
+        var percentY = 1 / canvasRect.h * cursorPosY;
+
+        transformRect.x = transformRect.x - ((scaleSize) * percentX);
+        transformRect.y = transformRect.y - ((scaleSize) * percentY);
+
+        if(transformRect.x > 0)
+            transformRect.x = 0;
+
+        if(transformRect.y > 0)
+            transformRect.y = 0;
+
+        transformRect.w = transformRect.w + scaleSize;
+        transformRect.h = transformRect.h + scaleSize;
+
+        touchDistance = distance;
+
+        clearTimeout(timeoutTouchCounter);
+        touchStepPress = 0;
+        touchStepRelease = 0;
+        isTouchMoved = false;
+
+        updateSizes();
+    }
 }
 
 function touchRelease(e)
@@ -187,8 +238,6 @@ function touchRelease(e)
         clearTimeout(timeoutTouchCounter);
         timeoutTouchCounter = setTimeout(touchCounter,300);
     }
-
-    isTouchMoved = false;
 }
 
 function touchCounter()
@@ -226,6 +275,7 @@ function touchCounter()
 
     touchStepPress = 0;
     touchStepRelease = 0;
+    isTouchMoved = false;
 }
 
 function leavePageEvent()
@@ -359,18 +409,38 @@ function arrayFromUint16(num)
 function sendToSocket(data)
 {
     if(isConnected)
+    {
+        webSocket.binaryType = 'arraybuffer';
         webSocket.send(data);
+    }
+}
+
+function sendTextToSocket(text)
+{
+    if(isConnected)
+    {
+        webSocket.binaryType = 'blob';
+        webSocket.send(text);
+    }
+}
+
+function updateTransformRect()
+{
+    transformRect.x = 0;
+    transformRect.y = 0;
+    transformRect.w = window.innerWidth;
+    transformRect.h = window.innerHeight;
 }
 
 function updateSizes()
 {
-    var w = window.innerWidth;
-    var h = window.innerHeight;
+//    var w = window.innerWidth;
+//    var h = window.innerHeight;
     var rect;
 
-    if(w < imageWidth || h < imageHeight)
-        rect = proportionalResizing(0,0,w,h,imageWidth,imageHeight);
-    else rect = new Rect(w/2 - imageWidth/2, h/2 - imageHeight/2, imageWidth, imageHeight);
+    if(transformRect.w < imageWidth || transformRect.h < imageHeight)
+        rect = proportionalResizing(transformRect.x, transformRect.y, transformRect.w, transformRect.h, imageWidth, imageHeight);
+    else rect = new Rect(transformRect.w/2 - imageWidth/2, transformRect.h/2 - imageHeight/2, imageWidth, imageHeight);
 
     canvas.style.left = rect.x + "px";
     canvas.style.top = rect.y + "px";
