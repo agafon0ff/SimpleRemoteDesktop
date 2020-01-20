@@ -110,10 +110,10 @@ svg#svgCursor {
     height: 100%;
 }
 
-#extraKeyboard {
+#keyboard {
     position: absolute;
-    background: #222;
-    bottom: 0;
-    width: 100%;
-    height: 40%;
+    background: none;
+    z-index: 3;
+    visibility: hidden;
 }
+

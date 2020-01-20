@@ -434,8 +434,8 @@ function updateTransformRect()
 
 function updateSizes()
 {
-//    var w = window.innerWidth;
-//    var h = window.innerHeight;
+    var w = window.innerWidth;
+    var h = window.innerHeight;
     var rect;
 
     if(transformRect.w < imageWidth || transformRect.h < imageHeight)
@@ -453,6 +453,19 @@ function updateSizes()
     cursorContainer.style.height = rect.h + "px";
 
     canvasRect = rect;
+
+    if(w < h)
+        rect = new Rect(0,h/3*2,w,h/3);
+    else
+    {
+        rect = proportionalResizing(0, h/2, w, h/2, 100, 30);
+        rect.y = h - rect.h;
+    }
+
+    keyboard.style.left = rect.x + "px";
+    keyboard.style.top = rect.y + "px";
+    keyboard.style.width = rect.w + "px";
+    keyboard.style.height = rect.h + "px";
 }
 
 function proportionalResizing(rectX, rectY, rectW, rectH, ratioW, ratioH)
@@ -662,6 +675,7 @@ function readFromXmlHttpRequest(data)
         isKeyboardHidden = false;
         lastHttpRequest = '';
         keyboard.innerHTML = data;
+        keyboard.style.visibility = "visible";
     }
 }
 

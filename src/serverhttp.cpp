@@ -204,6 +204,8 @@ QByteArray ServerHttp::createHeader(const QString &path, int dataSize)
         type += "text/javascript";
     else if(path.contains(".png"))
         type += "image/png";
+    else if(path.contains(".svg"))
+        type += "image/svg+xml";
 
     type += "; charset=utf-8\r\n";
 
