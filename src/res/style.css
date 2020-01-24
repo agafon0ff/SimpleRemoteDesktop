@@ -74,13 +74,6 @@ body, html {
 #btnChangeMonitor {width: 28px; right: 31px;}
 #btnFullscrean {width: 28px; right: 0px;}
 
-#cursorContainer {
-    position: relative;
-    width: 1920px;
-    height: 1280px;
-    z-index: 1;
-}
-
 #cursor {
     position: absolute;
     margin: 0;
@@ -117,3 +110,17 @@ svg#svgCursor {
     visibility: hidden;
 }
 
+.field {
+    position: absolute;
+    z-index: 1;
+}
+
+#cursorField {
+    position: absolute;
+    margin: 0;
+    padding: 0;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+}

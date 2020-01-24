@@ -5,5 +5,8 @@
         <file>res/script.js</file>
         <file>res/style.css</file>
         <file>res/keyboard.html</file>
+        <file>res/displayField.js</file>
+        <file>res/dataManager.js</file>
+        <file>res/sundries.js</file>
     </qresource>
 </RCC>

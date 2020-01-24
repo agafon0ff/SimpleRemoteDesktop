@@ -145,28 +145,28 @@ void DataParser::newData(const QByteArray &command, const QByteArray &data)
     }
     else if(command == KEY_SET_KEY_STATE)
     {
-        if(data.size() >= 3)
+        if(data.size() >= 4)
         {
             quint16 keyCode = uint16FromArray(data.mid(0,2));
-            bool state = static_cast<bool>(data.at(2));
-            emit setKeyPressed(keyCode,state);
+            quint16 keyState = uint16FromArray(data.mid(2,4));
+            emit setKeyPressed(keyCode,static_cast<bool>(keyState));
         }
     }
     else if(command == KEY_SET_MOUSE_KEY)
     {
-        if(data.size() >= 3)
+        if(data.size() >= 4)
         {
             quint16 keyCode = uint16FromArray(data.mid(0,2));
-            bool state = static_cast<bool>(data.at(2));
-            emit setMousePressed(keyCode,state);
+            quint16 keyState = uint16FromArray(data.mid(2,4));
+            emit setMousePressed(keyCode,static_cast<bool>(keyState));
         }
     }
     else if(command == KEY_SET_MOUSE_WHEEL)
     {
-        if(data.size() >= 3)
+        if(data.size() >= 4)
         {
-            bool state = static_cast<bool>(data.at(2));
-            emit setWheelChanged(state);
+            quint16 keyState = uint16FromArray(data.mid(2,4));
+            emit setWheelChanged(static_cast<bool>(keyState));
         }
     }
     else
