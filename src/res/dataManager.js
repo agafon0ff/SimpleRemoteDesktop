@@ -125,7 +125,7 @@ class DataManager
                 this.canvas.height = this.imageHeight;
                 
                 if(this.displayField)
-                    this.displayField.updateSizes();
+                    this.displayField.updateGeometry();
             }
         }
         else if(command === KEY_IMAGE_TILE)
@@ -200,7 +200,7 @@ class DataManager
         buf[8] = posYBuf[0];
         buf[9] = posYBuf[1];
 
-//        this.sendToSocket(buf);
+        this.sendToSocket(buf);
     }
     
     uint16FromArray(buf)

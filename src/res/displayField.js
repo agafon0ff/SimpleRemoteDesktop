@@ -4,19 +4,25 @@ class DisplayField
     {
         this.id = '123';
         this.dataManager = null;
-        
+
         this.canvas = document.getElementById('canvas');
         this.cursor = document.getElementById('cursor');
         this.cursorField = document.getElementById('cursorField');
         this.cursorContainer = document.getElementById('cursorContainer');
-        
+        this.cursorPosX = 100;
+        this.cursorPosY = 100;
+        this.width = 1;
+        this.height = 1;
+
+        this.isScaling = false;
+        this.scaleSize = 3;
         this.canvasRect = new Rect(0,0,1920,1280);
-        this.transformRect = new Rect(0,0,1920,1280);
-        
-        window.addEventListener('resize', this.updateTransformRect.bind(this));
-        
-        this.updateTransformRect();
-        
+        this.deltaRect = new Rect(0,0,0,0);
+
+        window.addEventListener('resize', this.updateGeometry.bind(this));
+
+        this.updateGeometry();
+
         if(isMobilePhone)
             this.initTouchField();
         else this.initMouseField();
@@ -27,41 +33,37 @@ class DisplayField
     {
         this.touchX = 0;
         this.touchY = 0;
-        this.cursorPosX = 100;
-        this.cursorPosY = 100;
-        this.realCursorPosX = 100;
-        this.realCursorPosY = 100;
         this.touchDistance = 0;
-        
+
         this.stepPress = 0;
         this.stepRelease = 0;
         this.stepMove = 0;
         this.isPressed = false;
-        
+
         this.touchTimer = null;
-        
+
         this.cursorField.addEventListener("touchstart", this.touchPress.bind(this));
         this.cursorField.addEventListener("touchmove", this.touchMove.bind(this));
         this.cursorField.addEventListener("touchend", this.touchRelease.bind(this));
-        
+
         this.cursor.style.visibility = "visible";
     }
-    
+
     touchPress(e)
     {
-        if(e.touches.length === 1)
+        if(e.touches.length === 1 && !this.isScaling)
         {
             this.touchX = e.touches[0].pageX;
             this.touchY = e.touches[0].pageY;
-            
+
             this.stepPress += 1;
             this.touchCounter();
         }
     }
-    
+
     touchMove(e)
     {
-        if(e.touches.length === 1)
+        if(e.touches.length === 1 && !this.isScaling)
         {
             this.stepMove += 1;
             this.touchCounter();
@@ -83,9 +85,11 @@ class DisplayField
         }
         else if(e.touches.length === 2)
         {
+            this.isScaling = true;
+            
             if(this.touchTimer)
                 clearTimeout(this.touchTimer);
-            
+
             var x1 = e.touches[0].pageX;
             var y1 = e.touches[0].pageY;
 
@@ -94,19 +98,36 @@ class DisplayField
 
             var distance = Math.sqrt(((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1)));
 
-            this.resizeField(distance);
+            if(distance > this.touchDistance)
+                this.scaleSize += 1;
+            if(distance < this.touchDistance)
+                this.scaleSize -= 1;
+            if(this.scaleSize < 0)
+                this.scaleSize = 0;
+            
+            this.touchDistance = distance;
+            
+            this.updatePositions();
         }
     }
-    
+
     touchRelease(e)
     {
-        this.stepRelease += 1;
-        this.touchCounter();
-        
+        if(!this.isScaling)
+        {
+            this.stepRelease += 1;
+            this.touchCounter();
+        }
+        else
+        {
+            this.touchDistance = 0;
+            this.isScaling = false;
+        }
+
         if(this.isPressed)
             this.dataManager.sendParameters(KEY_SET_MOUSE_KEY,0,0);
     }
-    
+
     touchCounter()
     {
         if(this.touchTimer)
@@ -114,7 +135,7 @@ class DisplayField
 
         this.touchTimer = setTimeout(this.touchWaiter.bind(this),200);
     }
-    
+
     touchWaiter()
     {
         if(this.touchTimer)
@@ -122,7 +143,7 @@ class DisplayField
             clearTimeout(this.touchTimer);
             this.touchTimer = null;
         }
-        
+
         if(this.stepPress === 1 && this.stepMove === 0 && this.stepRelease === 0)
         {
             this.touchTimer = setTimeout(this.touchWaiter.bind(this),400);
@@ -151,16 +172,16 @@ class DisplayField
             this.dataManager.sendParameters(KEY_SET_MOUSE_KEY,0,1);
             this.dataManager.sendParameters(KEY_SET_MOUSE_KEY,0,0);
         }
-        
+
         if(this.isPressed)
             this.dataManager.sendParameters(KEY_SET_MOUSE_KEY,0,0);
-        
+
         this.stepPress = 0;
         this.stepRelease = 0;
         this.stepMove = 0;
         this.isPressed = false;
     }
-    
+
     calcCursorPos(x, y)
     {
         var deltaX = this.touchX - x;
@@ -168,160 +189,168 @@ class DisplayField
 
         this.touchX = x;
         this.touchY = y;
-
+        
         this.cursorPosX = this.cursorPosX - deltaX;
         this.cursorPosY = this.cursorPosY - deltaY;
-
-        if(this.cursorPosX < 0)this.cursorPosX = 0;
         
-        else if(this.cursorPosX > this.canvasRect.w)
-            this.cursorPosX = this.canvasRect.w;
+        if(this.cursorPosX < 0) this.cursorPosX = 0;
+        if(this.cursorPosY < 0) this.cursorPosY = 0;
+        if(this.cursorPosX > this.canvas.width) this.cursorPosX = this.canvas.width;
+        if(this.cursorPosY > this.canvas.height) this.cursorPosY = this.canvas.height;
 
-        if(this.cursorPosY < 0)this.cursorPosY = 0;
-        
-        else if(this.cursorPosY > this.canvasRect.h)
-            this.cursorPosY = this.canvasRect.h;
-
-        this.cursor.style.left = this.cursorPosX + "px";
-        this.cursor.style.top = this.cursorPosY + "px";
-
-        this.realCursorPosX = this.canvas.width / this.canvasRect.w * this.cursorPosX;
-        this.realCursorPosY = this.canvas.height / this.canvasRect.h * this.cursorPosY;
-
-        this.dataManager.sendParameters(KEY_SET_CURSOR_POS,this.realCursorPosX,this.realCursorPosY);
+        this.dataManager.sendParameters(KEY_SET_CURSOR_POS,this.cursorPosX,this.cursorPosY);
+        this.updatePositions();
     }
-    
+
     resizeField(distance)
     {
-        var scaleSize = 0;
-
         if(distance > this.touchDistance)
-            scaleSize = 10;
+            scaleSize = 1;
         if(distance < this.touchDistance)
-            scaleSize = -10;
+            scaleSize = -1;
 
-        var percentX = 1 / this.canvas.width * this.realCursorPosX;
-        var percentY = 1 / this.canvas.height * this.realCursorPosY;
+        var percentX = 1.0 / this.canvas.width * this.cursorPosX;
+        var percentY = 1.0 / this.canvas.height * this.cursorPosY;
 
-        this.transformRect.x = this.transformRect.x - ((scaleSize) * percentX);
-        this.transformRect.y = this.transformRect.y - ((scaleSize) * percentY);
+        var deltaW = (this.canvasRect.w / 50) * scaleSize;
+        var deltaH = (this.canvasRect.h / 50) * scaleSize;
 
-        if(this.transformRect.x > 0)
-            this.transformRect.x = 0;
-
-        if(this.transformRect.y > 0)
-            this.transformRect.y = 0;
-        
-        this.transformRect.w = this.transformRect.w + scaleSize;
-        this.transformRect.h = this.transformRect.h + scaleSize;
-
-        if(this.transformRect.w > this.canvas.width)
-            this.transformRect.w = this.canvas.width;
-
-        if(this.transformRect.h > this.canvas.width)
-            this.transformRect.h = this.canvas.height;
+        if(this.canvasRect.w > this.width || this.canvasRect.h > this.height)
+        {
+            this.deltaRect.x = this.deltaRect.x - deltaW * percentX;
+            this.deltaRect.y = this.deltaRect.y - deltaH * percentY;
+            this.deltaRect.w = this.deltaRect.w + deltaW;
+            this.deltaRect.h = this.deltaRect.h + deltaH;
+        }
+        else
+        {
+            this.deltaRect.x = 0;
+            this.deltaRect.y = 0;
+            this.deltaRect.w = 0;
+            this.deltaRect.h = 0;
+        }
 
         this.touchDistance = distance;
-
-        this.cursorPosX = this.realCursorPosX * this.canvasRect.w / this.canvas.width;
-        this.cursorPosY = this.realCursorPosY * this.canvasRect.h / this.canvas.height;
-        
-        this.cursor.style.left = this.cursorPosX + "px";
-        this.cursor.style.top = this.cursorPosY + "px";
-
-        this.updateSizes();
+        this.updateGeometry();
     }
-    
-    
+
+
     // _______________ Desktop interaction _______________
     initMouseField()
     {
         this.cursorContainer.addEventListener('mousedown', this.mouseKeyStateChanged.bind(this));
         this.cursorContainer.addEventListener('mouseup', this.mouseKeyStateChanged.bind(this));
-        
+
         this.cursorContainer.addEventListener('wheel', this.mouseWheelEvent.bind(this));
         this.cursorContainer.addEventListener('mousemove', this.cursorPosChanged.bind(this));
+
+        this.cursor.style.visibility = "visible";
     }
-    
+
     mouseKeyStateChanged(event)
     {
         event.preventDefault();
-        
+
         if(event.type == 'mouseup')
             this.dataManager.sendParameters(KEY_SET_MOUSE_KEY,event.button,0);
-        
+
         else if(event.type == 'mousedown')
             this.dataManager.sendParameters(KEY_SET_MOUSE_KEY,event.button,1);
     }
-    
+
     mouseWheelEvent(event)
     {
         event.preventDefault();
-        
+
         if(event.deltaY > 0)
             this.dataManager.sendParameters(KEY_SET_MOUSE_WHEEL,0,1);
         else this.dataManager.sendParameters(KEY_SET_MOUSE_WHEEL,0,0);
     }
-    
+
     cursorPosChanged(event)
     {
         var x = event.clientX;
         var y = event.clientY;
 
-        var posX = this.canvas.width / this.canvasRect.w * (x - this.canvasRect.x);
-        var posY = this.canvas.height / this.canvasRect.h * (y - this.canvasRect.y);
+        this.cursorPosX = this.canvas.width / this.canvasRect.w * (x - this.canvasRect.x);
+        this.cursorPosY = this.canvas.height / this.canvasRect.h * (y - this.canvasRect.y);
 
-        this.dataManager.sendParameters(KEY_SET_CURSOR_POS,posX,posY);
+        this.dataManager.sendParameters(KEY_SET_CURSOR_POS,this.cursorPosX,this.cursorPosY);
     }
     // _____________________________________________________________
-    
+
     getCanvas()
     {
         return this.canvas;
     }
-    
-    updateTransformRect()
+
+    updateGeometry()
     {
-        this.transformRect.x = 0;
-        this.transformRect.y = 0;
-        this.transformRect.w = window.innerWidth;
-        this.transformRect.h = window.innerHeight;
-        
-        this.updateSizes();
-    }
-    
-    updateSizes()
-    {
-        var w = window.innerWidth;
-        var h = window.innerHeight;
+        this.width = window.innerWidth;
+        this.height = window.innerHeight;
+
         var rect;
 
-        if(this.transformRect.w < this.canvas.width || 
-           this.transformRect.h < this.canvas.height)
+        if(this.width < this.canvas.width || this.height < this.canvas.height)
         {
-            rect = proportionalResizing(this.transformRect.x, this.transformRect.y,
-                                        this.transformRect.w, this.transformRect.h,
-                                        this.canvas.width, this.canvas.height);
+            rect = proportionalResizing(0, 0, this.width, this.height, this.canvas.width, this.canvas.height);
         }
         else
         {
-            rect = new Rect(this.transformRect.w/2 - this.canvas.width/2,
-                            this.transformRect.h/2 - this.canvas.height/2,
-                            this.canvas.width, this.canvas.height);
+            rect = new Rect(this.width/2 - this.canvas.width/2,
+                            this.height/2 - this.canvas.height/2,
+                            this.canvas.width,
+                            this.canvas.height);
         }
+
+        this.deltaRect.w = (this.canvasRect.w) * (this.scaleSize / (this.canvasRect.w/100));
+        this.deltaRect.h = (this.canvasRect.h) * (this.scaleSize / (this.canvasRect.w/100));
         
-        this.canvasRect = rect;
+        this.canvasRect.x = rect.x - this.deltaRect.x;
+        this.canvasRect.y = rect.y - this.deltaRect.y;
+        this.canvasRect.w = rect.w + this.deltaRect.w;
+        this.canvasRect.h = rect.h + this.deltaRect.h;
+
         var rectList = [this.canvas, this.cursorContainer];
-        
+
         for(var i=0;i<rectList.length;++i)
         {
-            rectList[i].style.left = rect.x + 'px';
-            rectList[i].style.top = rect.y + 'px';
-            rectList[i].style.width = rect.w + 'px';
-            rectList[i].style.height = rect.h + 'px';
+            rectList[i].style.left = this.canvasRect.x + 'px';
+            rectList[i].style.top = this.canvasRect.y + 'px';
+            rectList[i].style.width = this.canvasRect.w + 'px';
+            rectList[i].style.height = this.canvasRect.h + 'px';
         }
     }
     
+    updatePositions()
+    {
+        var posX = this.cursorPosX * this.canvasRect.w / this.canvas.width;
+        var posY = this.cursorPosY * this.canvasRect.h / this.canvas.height;
+
+        this.cursor.style.left = posX + "px";
+        this.cursor.style.top = posY + "px";
+
+        if(this.scaleSize > 0)
+        {
+            var percentX = 1.0 / this.canvas.width * this.cursorPosX;
+            var percentY = 1.0 / this.canvas.height * this.cursorPosY;
+
+            var delta = this.scaleSize * 10;
+            var deltaX = (delta * percentX) - (delta / 2);
+            var deltaY = (delta * percentY) - (delta / 2);
+
+            this.deltaRect.x = (this.deltaRect.w * percentX) + deltaX;
+            this.deltaRect.y = (this.deltaRect.h * percentY) + deltaY;
+        }
+        else
+        {
+            this.deltaRect.x = 0;
+            this.deltaRect.y = 0;
+        }
+        
+        this.updateGeometry();
+    }
+
     setDataManager(dManager)
     {
         if(dManager)

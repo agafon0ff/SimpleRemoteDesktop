@@ -47,11 +47,10 @@ void DataParser::setData(const QByteArray &data)
         QByteArray command = activeBuf.mid(dataStep, COMMAD_SIZE);
         quint16 dataSize = uint16FromArray(activeBuf.mid(dataStep + COMMAD_SIZE, 2));
 
-        if(size >= (dataStep + COMMAD_SIZE + 2 + dataSize))
+        if(size >= (dataStep + COMMAD_SIZE + dataSize))
         {
             QByteArray payload = activeBuf.mid(dataStep + COMMAD_SIZE + 2, dataSize);
             dataStep += COMMAD_SIZE + 2 + dataSize;
-
             newData(command,payload);
 
             i = dataStep;
@@ -62,10 +61,10 @@ void DataParser::setData(const QByteArray &data)
 
             m_dataTmp = activeBuf.mid(dataStep, size - dataStep);
 
-            if(m_dataTmp.size() > 300)
+            if(m_dataTmp.size() > 1500)
                 m_dataTmp.clear();
 
-            m_timerClearTmp->start(500);
+            m_timerClearTmp->start(1500);
             break;
         }
     }

@@ -12,7 +12,7 @@ function documentIsLoaded()
     
     dManager = new DataManager();
     dManager.setDisplayField(displayField);
-    dManager.updateSizes = displayField.updateSizes();
+    dManager.updateGeometry = displayField.updateGeometry();
 }
 
 function initExtraKeys()
