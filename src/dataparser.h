@@ -17,11 +17,13 @@ private:
     QByteArray m_dataTmp;
     QTimer *m_timerClearTmp;
 
+    QList<QByteArray> m_socketsList;
+
 signals:
     void messgage(const QByteArray &data);
     void startGraber();
     void stopGraber();
-    void getNextTile();
+    void receivedTileNum(quint16 num);
     void changeDisplayNum();
     void setKeyPressed(quint16 keyCode, bool state);
     void setMousePressed(quint16 keyCode, bool state);
@@ -30,11 +32,13 @@ signals:
     void setMouseDelta(qint16 deltaX, qint16 deltaY);
 
 public slots:
-    void setData(const QByteArray &data);
+    void setNewSocket(const QByteArray &uuid);
+    void removeSocket(const QByteArray &uuid);
+
+    void setData(const QByteArray &uuid, const QByteArray &data);
 
     void sendImageParameters(const QSize &imageSize, int rectWidth);
-    void sendImageTile(quint16 posX, quint16 posY, const QImage &image);
-    void sendLastTile();
+    void sendImageTile(quint16 posX, quint16 posY, const QImage &image, quint16 tileNum);
 
 private slots:
     void newData(const QByteArray &command, const QByteArray &data);

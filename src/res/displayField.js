@@ -4,6 +4,7 @@ class DisplayField
     {
         this.id = '123';
         this.dataManager = null;
+        this.keyPressedList = [];
 
         this.canvas = document.getElementById('canvas');
         this.cursor = document.getElementById('cursor');
@@ -15,11 +16,13 @@ class DisplayField
         this.height = 1;
 
         this.isScaling = false;
-        this.scaleSize = 3;
+        this.scaleSize = 0;
         this.canvasRect = new Rect(0,0,1920,1280);
         this.deltaRect = new Rect(0,0,0,0);
 
+        window.addEventListener("contextmenu", function(event){event.preventDefault();});
         window.addEventListener('resize', this.updateGeometry.bind(this));
+        window.addEventListener("blur", this.leavePageEvent.bind(this));
 
         this.updateGeometry();
 
@@ -243,8 +246,9 @@ class DisplayField
 
         this.cursorContainer.addEventListener('wheel', this.mouseWheelEvent.bind(this));
         this.cursorContainer.addEventListener('mousemove', this.cursorPosChanged.bind(this));
-
-        this.cursor.style.visibility = "visible";
+        
+        window.addEventListener("keydown", this.keyStateChanged.bind(this));
+        window.addEventListener("keyup", this.keyStateChanged.bind(this));
     }
 
     mouseKeyStateChanged(event)
@@ -276,6 +280,25 @@ class DisplayField
         this.cursorPosY = this.canvas.height / this.canvasRect.h * (y - this.canvasRect.y);
 
         this.dataManager.sendParameters(KEY_SET_CURSOR_POS,this.cursorPosX,this.cursorPosY);
+    }
+    
+    keyStateChanged(event)
+    {
+        event.preventDefault();
+        var state = 0;
+        
+        if(event.type == 'keydown')
+            state = 1;
+        
+        this.dataManager.sendParameters(KEY_SET_KEY_STATE,event.keyCode,state);
+        
+        if(state === 1)
+            this.keyPressedList.push(event.keyCode);
+        else
+        {
+            if(this.keyPressedList.includes(event.keyCode))
+                this.keyPressedList.splice(this.keyPressedList.indexOf(event.keyCode,1));
+        }
     }
     // _____________________________________________________________
 
@@ -349,6 +372,14 @@ class DisplayField
         }
         
         this.updateGeometry();
+    }
+    
+    leavePageEvent()
+    {
+        var len = this.keyPressedList.length;
+
+        for(var i=0;i<len;++i)
+            this.dataManager.sendParameters(KEY_SET_KEY_STATE,this.keyPressedList[i],false);
     }
 
     setDataManager(dManager)

@@ -5,17 +5,17 @@
 static const QByteArray KEY_GET_IMAGE = "GIMG";
 static const QByteArray KEY_IMAGE_PARAM = "IMGP";
 static const QByteArray KEY_IMAGE_TILE = "IMGT";
-static const QByteArray KEY_GET_NEXT_TILE = "GNXT";
-static const QByteArray KEY_SET_LAST_TILE = "SLST";
 static const QByteArray KEY_SET_KEY_STATE = "SKST";
 static const QByteArray KEY_SET_CURSOR_POS = "SCUP";
 static const QByteArray KEY_SET_CURSOR_DELTA = "SCUD";
 static const QByteArray KEY_SET_MOUSE_KEY = "SMKS";
 static const QByteArray KEY_SET_MOUSE_WHEEL = "SMWH";
 static const QByteArray KEY_CHANGE_DISPLAY = "CHDP";
+static const QByteArray KEY_TILE_RECEIVED = "TLRD";
 
 const int COMMAD_SIZE = 4;
 const int REQUEST_MIN_SIZE = 6;
+const int PNG_HEADER_SIZE = 16;
 
 DataParser::DataParser(QObject *parent) : QObject(parent),
     m_timerClearTmp(new QTimer(this))
@@ -23,8 +23,20 @@ DataParser::DataParser(QObject *parent) : QObject(parent),
     connect(m_timerClearTmp,SIGNAL(timeout()),this,SLOT(timerClearTmpTick()));
 }
 
-void DataParser::setData(const QByteArray &data)
+void DataParser::setNewSocket(const QByteArray &uuid)
 {
+    m_socketsList.append(uuid);
+}
+
+void DataParser::removeSocket(const QByteArray &uuid)
+{
+    m_socketsList.removeOne(uuid);
+}
+
+void DataParser::setData(const QByteArray &uuid, const QByteArray &data)
+{
+    Q_UNUSED(uuid);
+
     QByteArray activeBuf = m_dataTmp;
     activeBuf.append(data);
     m_dataTmp.clear();
@@ -82,28 +94,21 @@ void DataParser::sendImageParameters(const QSize &imageSize, int rectWidth)
     emit messgage(data);
 }
 
-void DataParser::sendImageTile(quint16 posX, quint16 posY, const QImage &image)
+void DataParser::sendImageTile(quint16 posX, quint16 posY, const QImage &image, quint16 tileNum)
 {
     QByteArray bArray;
     QBuffer buffer(&bArray);
     buffer.open(QIODevice::WriteOnly);
     image.save(&buffer, "PNG");
+    bArray.remove(0,PNG_HEADER_SIZE);
 
     QByteArray data;
     data.append(KEY_IMAGE_TILE);
-    data.append(arrayFromUint16(static_cast<quint16>(bArray.size() + 4)));
+    data.append(arrayFromUint16(static_cast<quint16>(bArray.size() + 6)));
     data.append(arrayFromUint16(posX));
     data.append(arrayFromUint16(posY));
+    data.append(arrayFromUint16(tileNum));
     data.append(bArray);
-
-    emit messgage(data);
-}
-
-void DataParser::sendLastTile()
-{
-    QByteArray data;
-    data.append(KEY_SET_LAST_TILE);
-    data.append(arrayFromUint16(0));
 
     emit messgage(data);
 }
@@ -116,9 +121,10 @@ void DataParser::newData(const QByteArray &command, const QByteArray &data)
     {
         emit startGraber();
     }
-    else if(command == KEY_GET_NEXT_TILE)
+    else if(command == KEY_TILE_RECEIVED)
     {
-        emit getNextTile();
+        quint16 tileNum = uint16FromArray(data.mid(0,2));
+        emit receivedTileNum(tileNum);
     }
     else if(command == KEY_CHANGE_DISPLAY)
     {

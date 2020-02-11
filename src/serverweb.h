@@ -21,14 +21,17 @@ private:
     QByteArray m_dataTmp;
 
 signals:
-    void textFromSocket(const QString &text);
-    void dataFromSocket(const QByteArray &data);
+    void textFromSocket(const QByteArray &uuid, const QString &text);
+    void dataFromSocket(const QByteArray &uuid, const QByteArray &data);
     void disconnectedAll();
 
 public slots:
     bool initServer(quint16 port);
-    void sendText(const QString &text);
-    void sendData(const QByteArray &data);
+    void sendText(const QByteArray &uuid, const QString &text);
+    void sendData(const QByteArray &uuid, const QByteArray &data);
+
+    void sendTextToAll(const QString &text);
+    void sendDataToAll(const QByteArray &data);
 
 private slots:
     void newSocketConnection();

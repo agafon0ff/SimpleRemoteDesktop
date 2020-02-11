@@ -30,15 +30,14 @@ UnitingClass::UnitingClass(QObject *parent) : QObject(parent),
     updateCurrentIp();
     loadSettings();
 
-    connect(m_serverWeb,SIGNAL(dataFromSocket(QByteArray)),m_dataParser,SLOT(setData(QByteArray)));
-    connect(m_dataParser,SIGNAL(messgage(QByteArray)),m_serverWeb,SLOT(sendData(QByteArray)));
+    connect(m_serverWeb,SIGNAL(dataFromSocket(QByteArray,QByteArray)),m_dataParser,SLOT(setData(QByteArray,QByteArray)));
+    connect(m_dataParser,SIGNAL(messgage(QByteArray)),m_serverWeb,SLOT(sendDataToAll(QByteArray)));
 
     connect(m_dataParser,SIGNAL(startGraber()),m_graberClass,SLOT(startSending()));
     connect(m_serverWeb,SIGNAL(disconnectedAll()),m_graberClass,SLOT(stopSending()));
 
     connect(m_graberClass,SIGNAL(imageParameters(QSize,int)),m_dataParser,SLOT(sendImageParameters(QSize,int)));
-    connect(m_graberClass,SIGNAL(imageTile(quint16,quint16,QImage)),m_dataParser,SLOT(sendImageTile(quint16,quint16,QImage)));
-    connect(m_graberClass,SIGNAL(lastTileSended()),m_dataParser,SLOT(sendLastTile()));
+    connect(m_graberClass,SIGNAL(imageTile(quint16,quint16,QImage,quint16)),m_dataParser,SLOT(sendImageTile(quint16,quint16,QImage,quint16)));
     connect(m_graberClass,SIGNAL(screenPositionChanged(QPoint)),m_inputSimulator,SLOT(setScreenPosition(QPoint)));
 
     connect(m_dataParser,SIGNAL(setKeyPressed(quint16,bool)),m_inputSimulator,SLOT(simulateKeyboard(quint16,bool)));
@@ -46,6 +45,7 @@ UnitingClass::UnitingClass(QObject *parent) : QObject(parent),
     connect(m_dataParser,SIGNAL(setMouseMove(quint16,quint16)),m_inputSimulator,SLOT(simulateMouseMove(quint16,quint16)));
     connect(m_dataParser,SIGNAL(setWheelChanged(bool)),m_inputSimulator,SLOT(simulateWheelEvent(bool)));
     connect(m_dataParser,SIGNAL(changeDisplayNum()),m_graberClass,SLOT(changeScreenNum()));
+    connect(m_dataParser,SIGNAL(receivedTileNum(quint16)),m_graberClass,SLOT(setReceivedTileNum(quint16)));
     connect(m_dataParser,SIGNAL(setMouseDelta(qint16,qint16)),m_inputSimulator,SLOT(setMouseDelta(qint16,qint16)));
 
     m_graberClass->start();
@@ -120,6 +120,7 @@ void UnitingClass::loadSettings()
 
     m_serverHttp->setPort(static_cast<quint16>(portHttp));
     m_serverHttp->setPath(filesPath);
+    m_currentPort = portHttp;
 
     if(m_serverHttp->start())
     {
@@ -131,6 +132,4 @@ void UnitingClass::loadSettings()
         m_trayIcon->showMessage("SimpleRemoteDesktop","Failed to start on port: " +
                                 QString::number(portHttp) + "!",QSystemTrayIcon::Critical,5000);
     }
-
-    m_currentPort = portHttp;
 }

@@ -9,9 +9,11 @@
 
 GraberClass::GraberClass(QObject *parent) : QObject(parent),
     m_grabTimer(Q_NULLPTR),
-    m_grabInterval(1000),
+    m_grabInterval(40),
     m_rectSize(50),
-    m_screenNumber(0)
+    m_screenNumber(0),
+    m_currentTileNum(0),
+    m_receivedTileNum(0)
 {
     m_meanCounter.resize(4);
     m_meanCounter.fill(1);
@@ -52,6 +54,10 @@ void GraberClass::startSending()
         if(!m_grabTimer->isActive())
             m_grabTimer->start(m_grabInterval);
 
+    m_permitCounter = 0;
+    m_receivedTileNum = 0;
+    m_currentTileNum = 0;
+
     m_lastImage = QImage();
     updateImage();
 }
@@ -65,6 +71,9 @@ void GraberClass::stopSending()
 
 void GraberClass::updateImage()
 {
+    if(!isSendTilePermit())
+        return;
+
     QScreen *screen = QApplication::screens().at(m_screenNumber);
     QImage currentImage = screen->grabWindow(0).toImage().convertToFormat(QImage::Format_RGB444);
 
@@ -85,7 +94,7 @@ void GraberClass::updateImage()
         emit imageParameters(currentImage.size(), m_rectSize);
     }
 
-    int dataSize = 0;
+    quint16 tileNum = 0;
 
     for(int i=0;i<columnCount;++i)
     {
@@ -96,35 +105,37 @@ void GraberClass::updateImage()
 
             if(lastImage != image)
             {
-                ++dataSize;
-                emit imageTile(static_cast<quint16>(i),static_cast<quint16>(j),image);
+                emit imageTile(static_cast<quint16>(i),static_cast<quint16>(j),image,tileNum);
+
+                m_currentTileNum = tileNum;
+                ++tileNum;
             }
         }
     }
 
     m_lastImage = currentImage;
-    calculateSendInterval(dataSize);
 }
 
-void GraberClass::calculateSendInterval(int dataSize)
+void GraberClass::setReceivedTileNum(quint16 num)
 {
-    int vSize = m_meanCounter.size();
-    int sum = dataSize;
-    for(int i=0;i<vSize;++i)
-        sum += m_meanCounter.at(i);
-
-    sum = sum/(vSize+1);
-
-    m_meanCounter[0] = dataSize;
-    vSize = m_meanCounter.size()-1;
-    for(int j=vSize;j>0;--j)
-        m_meanCounter[j] = m_meanCounter.at(j-1);
-
-    int interval = 40 + sum*4;
-
-    if(interval > 1000)
-        interval = 1000;
-
-    m_grabTimer->setInterval(interval);
+    m_permitCounter = 0;
+    m_receivedTileNum = num;
 }
 
+bool GraberClass::isSendTilePermit()
+{
+    bool result = false;
+
+    if(m_currentTileNum <= (m_receivedTileNum))
+        result = true;
+
+    if(!result)
+    {
+        ++m_permitCounter;
+
+        if(m_permitCounter > 10)
+            result = true;
+    }
+
+    return result;
+}

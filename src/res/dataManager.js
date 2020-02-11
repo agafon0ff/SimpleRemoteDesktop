@@ -1,16 +1,17 @@
 var KEY_GET_IMAGE = new Uint8Array([71,73,77,71]); //ascii: "GIMG"
-var KEY_GET_NEXT_TILE = new Uint8Array([71,78,88,84]); //ascii: "GNXT"
 var KEY_SET_CURSOR_POS = new Uint8Array([83,67,85,80]); //SCUP
 var KEY_SET_CURSOR_DELTA = new Uint8Array([83,67,85,68]); //SCUD
 var KEY_SET_MOUSE_KEY = new Uint8Array([83,77,75,83]); //SMKS
 var KEY_SET_MOUSE_WHEEL = new Uint8Array([83,77,87,72]); //SMWH
 var KEY_SET_KEY_STATE = new Uint8Array([83,75,83,84]); //"SKST";
 var KEY_CHANGE_DISPLAY = new Uint8Array([67,72,68,80]); //"CHDP";
+var KEY_TILE_RECEIVED = new Uint8Array([84,76,82,68]); //"TLRD";
 var KEY_DEBUG = new Uint8Array([68,66,85,71]); //"DBUG";
 
 var KEY_IMAGE_PARAM = "73,77,71,80";//new Uint8Array([73,77,71,80]); //ascii: "IMGP";
 var KEY_IMAGE_TILE = "73,77,71,84";//IMGT
-var KEY_SET_LAST_TILE = "83,76,83,84";//SLST
+
+var PNG_HEADER = new Uint8Array([137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82]);
 
 var COMMAD_SIZE = 4;
 var REQUEST_MIN_SIZE = 6;
@@ -19,8 +20,8 @@ class DataManager
 {    
     constructor()
     {
+        this.asd = new Uint8Array();
         this.id = "123";
-        
         this.isConnected = false;
         
         this.startSocket();
@@ -59,13 +60,16 @@ class DataManager
                 
                 this.webSocket.binaryType = 'arraybuffer';
                 this.webSocket.send(KEY_GET_IMAGE);
+                
+                console.log("KEY_GET_IMAGE sended");
             }
+            else console.log("try 'startSession' but socket is not connected yet");
         }
     }
     
     socketConnected()
     {
-        setTimeout(this.startSession.bind(this),1000);
+        setTimeout(this.startSession.bind(this),1500);
     }
     
     setData(event)
@@ -132,18 +136,29 @@ class DataManager
         {
             var posX = this.uint16FromArray(data.subarray(0,2));
             var posY = this.uint16FromArray(data.subarray(2,4));
+            var tileNum = this.uint16FromArray(data.subarray(4,6));
+            
+            var rawData = new Uint8Array((data.length - 6) + PNG_HEADER.length);
+            
+            rawData.set(PNG_HEADER,0);
+            rawData.set(data.subarray(6,data.length),PNG_HEADER.length);
 
-            var rawData = data.subarray(4,data.length);
             var b64encoded = btoa(String.fromCharCode.apply(null, rawData));
 
             var image = new Image();
             image.posX = posX * this.rectWidth;
             image.posY = posY * this.rectWidth;
             image.ctx = this.ctx;
+            image.dataManager = this;
             image.width = this.rectWidth;
             image.height = this.rectWidth;
+            image.tileNum = tileNum;
 
-            image.onload = function(){this.ctx.drawImage(this, this.posX, this.posY, this.width, this.height);}
+            image.onload = function()
+            {
+                this.ctx.drawImage(this, this.posX, this.posY, this.width, this.height);
+                this.dataManager.sendParameters(KEY_TILE_RECEIVED,this.tileNum,0);
+            }
 
             var base64Png = 'data:image/png;base64,';
             base64Png += b64encoded;

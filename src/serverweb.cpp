@@ -1,4 +1,5 @@
 #include "serverweb.h"
+#include <QUuid>
 
 ServerWeb::ServerWeb(QObject *parent) : QObject(parent)
 {
@@ -25,24 +26,40 @@ bool ServerWeb::initServer(quint16 port)
     return result;
 }
 
-void ServerWeb::sendText(const QString &text)
+void ServerWeb::sendText(const QByteArray &uuid, const QString &text)
+{
+    for(int i=0;i<m_webClients.size();++i)
+        if(m_webClients.at(i)->property("uuid").toByteArray() == uuid)
+            m_webClients.at(i)->sendTextMessage(text);
+}
+
+void ServerWeb::sendData(const QByteArray &uuid, const QByteArray &data)
+{
+    for(int i=0;i<m_webClients.size();++i)
+        if(m_webClients.at(i)->property("uuid").toByteArray() == uuid)
+            m_webClients.at(i)->sendBinaryMessage(data);
+}
+
+void ServerWeb::sendTextToAll(const QString &text)
 {
     for(int i=0;i<m_webClients.size();++i)
         m_webClients.at(i)->sendTextMessage(text);
 }
 
-void ServerWeb::sendData(const QByteArray &data)
+void ServerWeb::sendDataToAll(const QByteArray &data)
 {
     for(int i=0;i<m_webClients.size();++i)
         m_webClients.at(i)->sendBinaryMessage(data);
 }
 
-
 void ServerWeb::newSocketConnection()
 {
     QWebSocket *socket = m_webSocketServer->nextPendingConnection();
 
-    qDebug()<<"Web: New connection.";
+    QByteArray uuidArr = QUuid::createUuid().toRfc4122();
+    socket->setProperty("uuid",uuidArr);
+
+    qDebug()<<"Web: New connection."<<QUuid::fromRfc4122(uuidArr);
 
     connect(socket,SIGNAL(binaryMessageReceived(QByteArray)),this,SLOT(binData(QByteArray)));
     connect(socket,SIGNAL(textMessageReceived(QString)),this,SLOT(textData(QString)));
@@ -55,25 +72,33 @@ void ServerWeb::socketDisconnected()
 {
     QWebSocket *socket = static_cast<QWebSocket*>(sender());
 
-    if(socket)
-    {
-        qDebug()<<"Web: One disconnected";
-        m_webClients.removeOne(socket);
-        socket->deleteLater();
+    QByteArray uuidArr = socket->property("uuid").toByteArray();
 
-        if(m_webClients.size() == 0)
-            emit disconnectedAll();
-    }
+    qDebug()<<"Web: One disconnected"<<QUuid::fromRfc4122(uuidArr);
+
+    m_webClients.removeOne(socket);
+    socket->deleteLater();
+
+    if(m_webClients.size() == 0)
+        emit disconnectedAll();
 }
 
 void ServerWeb::textData(const QString &text)
 {
     qDebug()<<"ServerWeb::textData"<<text;
-    emit textFromSocket(text);
+
+    QWebSocket *socket = static_cast<QWebSocket*>(sender());
+    QByteArray uuidArr = socket->property("uuid").toByteArray();
+
+    emit textFromSocket(uuidArr, text);
 }
 
 void ServerWeb::binData(const QByteArray &buf)
 {
 //    qDebug()<<"ServerWeb::binData"<<buf;
-    emit dataFromSocket(buf);
+
+    QWebSocket *socket = static_cast<QWebSocket*>(sender());
+    QByteArray uuidArr = socket->property("uuid").toByteArray();
+
+    emit dataFromSocket(uuidArr, buf);
 }

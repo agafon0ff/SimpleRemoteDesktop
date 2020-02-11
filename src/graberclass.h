@@ -30,6 +30,9 @@ private:
     int m_grabInterval;
     int m_rectSize;
     int m_screenNumber;
+    int m_currentTileNum;
+    int m_receivedTileNum;
+    int m_permitCounter;
     QImage m_lastImage;
 
     QVector<int> m_meanCounter;
@@ -37,8 +40,7 @@ private:
 signals:
     void finished();
     void imageParameters(const QSize &imageSize, int rectWidth);
-    void imageTile(quint16 posX, quint16 posY, const QImage &image);
-    void lastTileSended();
+    void imageTile(quint16 posX, quint16 posY, const QImage &image, quint16 tileNum);
     void screenPositionChanged(const QPoint &pos);
 
 public slots:
@@ -51,9 +53,10 @@ public slots:
     void startSending();
     void stopSending();
     void updateImage();
+    void setReceivedTileNum(quint16 num);
 
 private slots:
-    void calculateSendInterval(int dataSize);
+    bool isSendTilePermit();
 };
 
 #endif // GRABERCLASS_H
