@@ -5,11 +5,14 @@ class DisplayField
         this.id = '123';
         this.dataManager = null;
         this.keyPressedList = [];
+        this.rectWidth = 100;
+        
+        this.canvas = null;
+        this.ctx = null;
+        this.cursor = null;
+        this.cursorField = null;
+        this.cursorContainer = null;
 
-        this.canvas = document.getElementById('canvas');
-        this.cursor = document.getElementById('cursor');
-        this.cursorField = document.getElementById('cursorField');
-        this.cursorContainer = document.getElementById('cursorContainer');
         this.cursorPosX = 100;
         this.cursorPosY = 100;
         this.width = 1;
@@ -19,16 +22,22 @@ class DisplayField
         this.scaleSize = 0;
         this.canvasRect = new Rect(0,0,1920,1280);
         this.deltaRect = new Rect(0,0,0,0);
-
+    }
+    
+    initDisplayField()
+    {
+        this.createCanvas();
+        this.crateCursorField();
+        
         window.addEventListener("contextmenu", function(event){event.preventDefault();});
         window.addEventListener('resize', this.updateGeometry.bind(this));
         window.addEventListener("blur", this.leavePageEvent.bind(this));
-
-        this.updateGeometry();
-
+        
         if(isMobilePhone)
             this.initTouchField();
         else this.initMouseField();
+        
+        this.updateGeometry();
     }
 
     // _______________ Touch  interaction _______________
@@ -205,39 +214,6 @@ class DisplayField
         this.updatePositions();
     }
 
-    resizeField(distance)
-    {
-        if(distance > this.touchDistance)
-            scaleSize = 1;
-        if(distance < this.touchDistance)
-            scaleSize = -1;
-
-        var percentX = 1.0 / this.canvas.width * this.cursorPosX;
-        var percentY = 1.0 / this.canvas.height * this.cursorPosY;
-
-        var deltaW = (this.canvasRect.w / 50) * scaleSize;
-        var deltaH = (this.canvasRect.h / 50) * scaleSize;
-
-        if(this.canvasRect.w > this.width || this.canvasRect.h > this.height)
-        {
-            this.deltaRect.x = this.deltaRect.x - deltaW * percentX;
-            this.deltaRect.y = this.deltaRect.y - deltaH * percentY;
-            this.deltaRect.w = this.deltaRect.w + deltaW;
-            this.deltaRect.h = this.deltaRect.h + deltaH;
-        }
-        else
-        {
-            this.deltaRect.x = 0;
-            this.deltaRect.y = 0;
-            this.deltaRect.w = 0;
-            this.deltaRect.h = 0;
-        }
-
-        this.touchDistance = distance;
-        this.updateGeometry();
-    }
-
-
     // _______________ Desktop interaction _______________
     initMouseField()
     {
@@ -301,11 +277,6 @@ class DisplayField
         }
     }
     // _____________________________________________________________
-
-    getCanvas()
-    {
-        return this.canvas;
-    }
 
     updateGeometry()
     {
@@ -386,6 +357,110 @@ class DisplayField
     {
         if(dManager)
             this.dataManager = dManager;
+    }
+    
+    setImageParameters(w, h, r)
+    {
+        this.rectWidth = r;
+        
+        if(this.canvas)
+        {
+            this.canvas.width = w;
+            this.canvas.height = h;
+            this.updateGeometry();
+        }
+    }
+    
+    setImageData(posX, posY, b64data, tileNum)
+    {
+        if(!this.ctx)
+            return;
+        
+        var image = new Image();
+        image.posX = posX * this.rectWidth;
+        image.posY = posY * this.rectWidth;
+        image.ctx = this.ctx;
+        image.dataManager = this.dataManager;
+        image.width = this.rectWidth;
+        image.height = this.rectWidth;
+        image.tileNum = tileNum;
+
+        image.onload = function()
+        {
+            this.ctx.drawImage(this, this.posX, this.posY, this.width, this.height);
+            this.dataManager.sendParameters(KEY_TILE_RECEIVED,this.tileNum,0);
+        }
+
+        image.src = b64data;
+    }
+    
+    createCanvas()
+    {
+        this.canvas = document.createElement('canvas');
+        this.canvas.id = 'canvas';
+        this.canvas.width = 1920;
+        this.canvas.height = 1280;
+        this.canvas.style.cssText = 
+            'position: absolute; \
+            width: 100%; \
+            height: 100%; \
+            z-index: 0;'; 
+        
+        this.ctx = this.canvas.getContext('2d');
+        
+        document.body.append(this.canvas);
+    }
+    
+    crateCursorField()
+    {
+        this.cursorField = document.createElement('div');
+        this.cursorField.id = 'cursorField';
+        this.cursorField.style.cssText = 
+            'position:absolute; margin:0; \
+            padding:0; \
+            left:0; \
+            top:0; \
+            width:100%; \
+            height:100%; \
+            z-index:1;';
+        
+        this.cursorContainer = document.createElement('div');
+        this.cursorContainer.id = 'cursorContainer';
+        this.cursorContainer.style.cssText = "position:absolute; z-index:1;";
+        this.cursorField.append(this.cursorContainer);
+        
+        this.cursor = document.createElement('div');
+        this.cursor.id = 'cursor';
+        this.cursor.style.cssText = 
+            'position:absolute; \
+            margin:0; \
+            padding:0; \
+            width:10px; \
+            height:10px; \
+            z-index:2; \
+            visibility:hidden;';
+        
+        this.cursorContainer.append(this.cursor);
+        
+        var svgCursor = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svgCursor.id = 'svgCursor';
+        svgCursor.setAttribute("width", "24");
+        svgCursor.setAttribute("height", "24");
+        svgCursor.setAttribute ("viewBox", "0 0 24 24");
+        svgCursor.innerHTML = '<path d="M0,0 L24,9 L13,13 L9,24 L0,0" stroke="black" stroke-width="1" fill="white"/>';
+        svgCursor.style.cssText = 
+            'display: block; \
+            position: absolute; \
+            margin: 0; \
+            padding: 0; \
+            left: 0; \
+            top: 0; \
+            width: 100%; \
+            height: 100%;';
+        
+        this.cursor.append(svgCursor);
+        
+        document.body.append(this.cursorField);
     }
 }
 

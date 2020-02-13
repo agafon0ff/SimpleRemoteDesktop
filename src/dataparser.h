@@ -5,6 +5,7 @@
 #include <QSize>
 #include <QImage>
 #include <QTimer>
+#include <QMap>
 
 class DataParser : public QObject
 {
@@ -14,13 +15,28 @@ public:
 
 private:
 
+    struct SocketStruct
+    {
+        QByteArray uuid;
+        QByteArray nonce;
+        bool isAuthenticated = false;
+
+        SocketStruct(const QByteArray &uuid, const QByteArray &nonce):
+        uuid(uuid), nonce(nonce){}
+
+        SocketStruct(){}
+    };
+
+    QString m_login;
+    QString m_pass;
     QByteArray m_dataTmp;
     QTimer *m_timerClearTmp;
 
-    QList<QByteArray> m_socketsList;
+    QMap<QByteArray,SocketStruct> m_socketsMap;
 
 signals:
-    void messgage(const QByteArray &data);
+    void message(const QByteArray &data);
+    void messageToSocket(const QByteArray &uuid, const QByteArray &data);
     void startGraber();
     void stopGraber();
     void receivedTileNum(quint16 num);
@@ -32,6 +48,7 @@ signals:
     void setMouseDelta(qint16 deltaX, qint16 deltaY);
 
 public slots:
+    void setLoginPass(const QString &login, const QString &pass);
     void setNewSocket(const QByteArray &uuid);
     void removeSocket(const QByteArray &uuid);
 
@@ -41,10 +58,12 @@ public slots:
     void sendImageTile(quint16 posX, quint16 posY, const QImage &image, quint16 tileNum);
 
 private slots:
-    void newData(const QByteArray &command, const QByteArray &data);
+    void newData(const QByteArray &uuid, const QByteArray &command, const QByteArray &data);
+    void checkAuthentication(const QByteArray &uuid, const QByteArray &request);
+    bool isSocketAuthenticated(const QByteArray &uuid);
+
     void debugHexData(const QByteArray &data);
     void timerClearTmpTick();
-
 
     QByteArray arrayFromUint16(quint16 number);
     quint16 uint16FromArray(const QByteArray &buf);

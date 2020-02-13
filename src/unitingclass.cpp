@@ -31,7 +31,11 @@ UnitingClass::UnitingClass(QObject *parent) : QObject(parent),
     loadSettings();
 
     connect(m_serverWeb,SIGNAL(dataFromSocket(QByteArray,QByteArray)),m_dataParser,SLOT(setData(QByteArray,QByteArray)));
-    connect(m_dataParser,SIGNAL(messgage(QByteArray)),m_serverWeb,SLOT(sendDataToAll(QByteArray)));
+    connect(m_serverWeb,SIGNAL(socketConnected(QByteArray)),m_dataParser,SLOT(setNewSocket(QByteArray)));
+    connect(m_serverWeb,SIGNAL(socketDisconnected(QByteArray)),m_dataParser,SLOT(removeSocket(QByteArray)));
+
+    connect(m_dataParser,SIGNAL(message(QByteArray)),m_serverWeb,SLOT(sendDataToAll(QByteArray)));
+    connect(m_dataParser,SIGNAL(messageToSocket(QByteArray,QByteArray)),m_serverWeb,SLOT(sendData(QByteArray,QByteArray)));
 
     connect(m_dataParser,SIGNAL(startGraber()),m_graberClass,SLOT(startSending()));
     connect(m_serverWeb,SIGNAL(disconnectedAll()),m_graberClass,SLOT(stopSending()));
@@ -89,10 +93,9 @@ void UnitingClass::updateCurrentIp()
 void UnitingClass::loadSettings()
 {
     QSettings settings("config.ini",QSettings::IniFormat);
-    settings.beginGroup("HTTP_SERVER");
+    settings.beginGroup("REMOTE_DESKTOP");
 
     int portHttp = settings.value("portHttp",0).toInt();
-
     if(portHttp == 0)
     {
         portHttp = 8080;
@@ -100,7 +103,6 @@ void UnitingClass::loadSettings()
     }
 
     QString filesPath = settings.value("filesPath").toString();
-
     if(filesPath.isEmpty())
     {
         filesPath = ":/res/";
@@ -108,15 +110,30 @@ void UnitingClass::loadSettings()
     }
 
     int portWeb = settings.value("portWeb",0).toInt();
-
     if(portWeb == 0)
     {
         portWeb = 8081;
         settings.setValue("portWeb",portWeb);
     }
 
+    QString login = settings.value("login").toString();
+    if(login.isEmpty())
+    {
+        login = "login";
+        settings.setValue("login",login);
+    }
+
+    QString pass = settings.value("pass").toString();
+    if(pass.isEmpty())
+    {
+        pass = "pass";
+        settings.setValue("pass",pass);
+    }
+
     settings.endGroup();
     settings.sync();
+
+    m_dataParser->setLoginPass(login,pass);
 
     m_serverHttp->setPort(static_cast<quint16>(portHttp));
     m_serverHttp->setPath(filesPath);

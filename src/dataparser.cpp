@@ -1,6 +1,8 @@
 #include "dataparser.h"
+#include <QCryptographicHash>
 #include <QBuffer>
-#include <QtDebug>
+#include <QDebug>
+#include <QUuid>
 
 static const QByteArray KEY_GET_IMAGE = "GIMG";
 static const QByteArray KEY_IMAGE_PARAM = "IMGP";
@@ -12,6 +14,9 @@ static const QByteArray KEY_SET_MOUSE_KEY = "SMKS";
 static const QByteArray KEY_SET_MOUSE_WHEEL = "SMWH";
 static const QByteArray KEY_CHANGE_DISPLAY = "CHDP";
 static const QByteArray KEY_TILE_RECEIVED = "TLRD";
+static const QByteArray KEY_SET_NONCE = "STNC";
+static const QByteArray KEY_SET_AUTH_REQUEST = "SARQ";
+static const QByteArray KEY_SET_AUTH_RESPONSE = "SARP";
 
 const int COMMAD_SIZE = 4;
 const int REQUEST_MIN_SIZE = 6;
@@ -23,14 +28,30 @@ DataParser::DataParser(QObject *parent) : QObject(parent),
     connect(m_timerClearTmp,SIGNAL(timeout()),this,SLOT(timerClearTmpTick()));
 }
 
+void DataParser::setLoginPass(const QString &login, const QString &pass)
+{
+    m_login = login;
+    m_pass = pass;
+}
+
 void DataParser::setNewSocket(const QByteArray &uuid)
 {
-    m_socketsList.append(uuid);
+    SocketStruct sStruct;
+    sStruct.uuid = uuid;
+    sStruct.nonce = QUuid::createUuid().toRfc4122();
+    m_socketsMap.insert(uuid, sStruct);
+
+    QByteArray data;
+    data.append(KEY_SET_NONCE);
+    data.append(arrayFromUint16(static_cast<quint16>(sStruct.nonce.size())));
+    data.append(sStruct.nonce);
+
+    emit messageToSocket(uuid, data);
 }
 
 void DataParser::removeSocket(const QByteArray &uuid)
 {
-    m_socketsList.removeOne(uuid);
+    m_socketsMap.remove(uuid);
 }
 
 void DataParser::setData(const QByteArray &uuid, const QByteArray &data)
@@ -45,7 +66,7 @@ void DataParser::setData(const QByteArray &uuid, const QByteArray &data)
 
     if(size == COMMAD_SIZE)
     {
-        newData(data,QByteArray());
+        newData(uuid, data, QByteArray());
         return;
     }
 
@@ -63,7 +84,7 @@ void DataParser::setData(const QByteArray &uuid, const QByteArray &data)
         {
             QByteArray payload = activeBuf.mid(dataStep + COMMAD_SIZE + 2, dataSize);
             dataStep += COMMAD_SIZE + 2 + dataSize;
-            newData(command,payload);
+            newData(uuid, command, payload);
 
             i = dataStep;
         }
@@ -73,10 +94,10 @@ void DataParser::setData(const QByteArray &uuid, const QByteArray &data)
 
             m_dataTmp = activeBuf.mid(dataStep, size - dataStep);
 
-            if(m_dataTmp.size() > 1500)
+            if(m_dataTmp.size() > 2000)
                 m_dataTmp.clear();
 
-            m_timerClearTmp->start(1500);
+            m_timerClearTmp->start(2000);
             break;
         }
     }
@@ -91,7 +112,9 @@ void DataParser::sendImageParameters(const QSize &imageSize, int rectWidth)
     data.append(arrayFromUint16(static_cast<quint16>(imageSize.height())));
     data.append(arrayFromUint16(static_cast<quint16>(rectWidth)));
 
-    emit messgage(data);
+    foreach(SocketStruct sStruct, m_socketsMap.values())
+        if(sStruct.isAuthenticated)
+            emit messageToSocket(sStruct.uuid,data);
 }
 
 void DataParser::sendImageTile(quint16 posX, quint16 posY, const QImage &image, quint16 tileNum)
@@ -110,12 +133,25 @@ void DataParser::sendImageTile(quint16 posX, quint16 posY, const QImage &image, 
     data.append(arrayFromUint16(tileNum));
     data.append(bArray);
 
-    emit messgage(data);
+    foreach(SocketStruct sStruct, m_socketsMap.values())
+        if(sStruct.isAuthenticated)
+            emit messageToSocket(sStruct.uuid,data);
 }
 
-void DataParser::newData(const QByteArray &command, const QByteArray &data)
+void DataParser::newData(const QByteArray &uuid, const QByteArray &command, const QByteArray &data)
 {
 //    qDebug()<<"DataParser::newData"<<command<<data;
+
+    if(command == KEY_SET_AUTH_REQUEST)
+    {
+        checkAuthentication(uuid,data);
+        return;
+    }
+    else
+    {
+        if(!isSocketAuthenticated(uuid))
+            return;
+    }
 
     if(command == KEY_GET_IMAGE)
     {
@@ -179,6 +215,47 @@ void DataParser::newData(const QByteArray &command, const QByteArray &data)
         qDebug()<<"DataParser::newData"<<command<<data;
         debugHexData(data);
     }
+}
+
+void DataParser::checkAuthentication(const QByteArray &uuid, const QByteArray &request)
+{
+    if(!m_socketsMap.contains(uuid))
+        return;
+
+    SocketStruct sStruct = m_socketsMap.value(uuid);
+    QString sum = m_login + m_pass;
+    QByteArray concatFirst = QCryptographicHash::hash(sum.toUtf8(),QCryptographicHash::Md5).toBase64();
+    concatFirst.append(sStruct.nonce.toBase64());
+    QByteArray concatSecond = QCryptographicHash::hash(concatFirst,QCryptographicHash::Md5).toBase64();
+    bool isAuthenticated = false;
+
+    if(request.toBase64() == concatSecond)
+    {
+        if(!sStruct.isAuthenticated)
+            m_socketsMap[uuid].isAuthenticated = true;
+
+        isAuthenticated = true;
+    }
+
+    QByteArray data;
+    data.append(KEY_SET_AUTH_RESPONSE);
+    data.append(arrayFromUint16(2));
+
+    if(isAuthenticated)
+        data.append(arrayFromUint16(1));
+    else data.append(arrayFromUint16(0));
+
+    emit messageToSocket(uuid, data);
+}
+
+bool DataParser::isSocketAuthenticated(const QByteArray &uuid)
+{
+    bool result = false;
+
+    if(m_socketsMap.contains(uuid))
+        result = m_socketsMap.value(uuid).isAuthenticated;
+
+    return result;
 }
 
 void DataParser::debugHexData(const QByteArray &data)

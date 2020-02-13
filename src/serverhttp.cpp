@@ -72,85 +72,6 @@ void ServerHttp::sendResponse(QTcpSocket *socket, const QString &path, const QBy
     socket->disconnectFromHost();
 }
 
-void ServerHttp::newSocketConnected()
-{
-    QTcpSocket* socket = m_tcpServer->nextPendingConnection();
-//    QString address = QHostAddress(socket->peerAddress().toIPv4Address()).toString();
-    connect(socket,SIGNAL(disconnected()),this,SLOT(socketDisconneted()));
-    connect(socket,SIGNAL(readyRead()),this,SLOT(readDataFromSocket()));
-
-    m_tcpSockets.append(socket);
-}
-
-void ServerHttp::socketDisconneted()
-{
-    QTcpSocket* socket = static_cast<QTcpSocket*>(sender());
-//    QString address = QHostAddress(socket->peerAddress().toIPv4Address()).toString();
-    m_tcpSockets.removeOne(socket);
-}
-
-void ServerHttp::readDataFromSocket()
-{
-    QTcpSocket* socket = static_cast<QTcpSocket*>(sender());
-    QByteArray buf = socket->readAll();
-    QStringList list = QString(buf).split("\r\n");
-    QString method;
-    QString path;
-    QByteArray requestData;
-    QMap<QString,QString> cookies;
-    QRegularExpression re;
-
-    if(list.last().size() > 0)
-        requestData.append(list.last());
-
-    foreach (QString line, list)
-    {
-        if(line.contains("HTTP"))
-        {
-            re = QRegularExpression("(\\S*)\\s*(\\S*)\\s*HTTP");
-            QRegularExpressionMatchIterator it = re.globalMatch(line);
-
-            while(it.hasNext())
-            {
-                QRegularExpressionMatch match = it.next();
-                method = match.captured(1);
-                path = match.captured(2);
-            }
-        }
-        else if(line.contains("Cookie:"))
-        {
-            re = QRegularExpression("\\s(.*?)=(.*?)($|;|:)");
-            QRegularExpressionMatchIterator it = re.globalMatch(line);
-
-            while(it.hasNext())
-            {
-                QRegularExpressionMatch match = it.next();
-                cookies.insert(match.captured(1),match.captured(2));
-            }
-        }
-    }
-
-    requestHandler(socket,method,path,cookies,requestData);
-}
-
-void ServerHttp::requestHandler(QTcpSocket *socket, const QString &method, const QString &path, const QMap<QString,QString> &cookies, const QByteArray &requestData)
-{
-    Q_UNUSED(cookies);
-
-    qDebug()<<"ServerHttp::requestHandler"<<socket<<method<<path<<requestData;
-
-    if(method == "GET")
-    {
-        sendResponse(socket,path,getData(path));
-    }
-    else if(method == "POST")
-    {
-        if(receivers(SIGNAL(postRequest(QTcpSocket*,QString,QByteArray))) == 0)
-            sendResponse(socket,path,getData(path));
-        else emit postRequest(socket,path,requestData);
-    }
-}
-
 QByteArray ServerHttp::getData(const QString &name)
 {
     QByteArray result;
@@ -232,6 +153,85 @@ QByteArray ServerHttp::createHeader(const QString &path, int dataSize)
     result.append("\r\n");
 
     return result;
+}
+
+void ServerHttp::newSocketConnected()
+{
+    QTcpSocket* socket = m_tcpServer->nextPendingConnection();
+//    QString address = QHostAddress(socket->peerAddress().toIPv4Address()).toString();
+    connect(socket,SIGNAL(disconnected()),this,SLOT(socketDisconneted()));
+    connect(socket,SIGNAL(readyRead()),this,SLOT(readDataFromSocket()));
+
+    m_tcpSockets.append(socket);
+}
+
+void ServerHttp::socketDisconneted()
+{
+    QTcpSocket* socket = static_cast<QTcpSocket*>(sender());
+//    QString address = QHostAddress(socket->peerAddress().toIPv4Address()).toString();
+    m_tcpSockets.removeOne(socket);
+}
+
+void ServerHttp::readDataFromSocket()
+{
+    QTcpSocket* socket = static_cast<QTcpSocket*>(sender());
+    QByteArray buf = socket->readAll();
+    QStringList list = QString(buf).split("\r\n");
+    QString method;
+    QString path;
+    QByteArray requestData;
+    QMap<QString,QString> cookies;
+    QRegularExpression re;
+
+    if(list.last().size() > 0)
+        requestData.append(list.last());
+
+    foreach (QString line, list)
+    {
+        if(line.contains("HTTP"))
+        {
+            re = QRegularExpression("(\\S*)\\s*(\\S*)\\s*HTTP");
+            QRegularExpressionMatchIterator it = re.globalMatch(line);
+
+            while(it.hasNext())
+            {
+                QRegularExpressionMatch match = it.next();
+                method = match.captured(1);
+                path = match.captured(2);
+            }
+        }
+        else if(line.contains("Cookie:"))
+        {
+            re = QRegularExpression("\\s(.*?)=(.*?)($|;|:)");
+            QRegularExpressionMatchIterator it = re.globalMatch(line);
+
+            while(it.hasNext())
+            {
+                QRegularExpressionMatch match = it.next();
+                cookies.insert(match.captured(1),match.captured(2));
+            }
+        }
+    }
+
+    requestHandler(socket,method,path,cookies,requestData);
+}
+
+void ServerHttp::requestHandler(QTcpSocket *socket, const QString &method, const QString &path, const QMap<QString,QString> &cookies, const QByteArray &requestData)
+{
+    Q_UNUSED(cookies);
+
+    qDebug()<<"ServerHttp::requestHandler"<<socket<<method<<path<<requestData;
+
+    if(method == "GET")
+    {
+        sendResponse(socket,path,getData(path));
+    }
+    else if(method == "POST")
+    {
+        if(receivers(SIGNAL(postRequest(QTcpSocket*,QString,QByteArray))) == 0)
+            sendResponse(socket,path,getData(path));
+        else emit postRequest(socket,path,requestData);
+    }
 }
 
 void ServerHttp::updateFilesList()

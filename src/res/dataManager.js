@@ -6,10 +6,14 @@ var KEY_SET_MOUSE_WHEEL = new Uint8Array([83,77,87,72]); //SMWH
 var KEY_SET_KEY_STATE = new Uint8Array([83,75,83,84]); //"SKST";
 var KEY_CHANGE_DISPLAY = new Uint8Array([67,72,68,80]); //"CHDP";
 var KEY_TILE_RECEIVED = new Uint8Array([84,76,82,68]); //"TLRD";
+var KEY_SET_AUTH_REQUEST = new Uint8Array([83,65,82,81]); //"SARQ";
 var KEY_DEBUG = new Uint8Array([68,66,85,71]); //"DBUG";
+
 
 var KEY_IMAGE_PARAM = "73,77,71,80";//new Uint8Array([73,77,71,80]); //ascii: "IMGP";
 var KEY_IMAGE_TILE = "73,77,71,84";//IMGT
+var KEY_SET_NONCE = "83,84,78,67";//STNC
+var KEY_SET_AUTH_RESPONSE = "83,65,82,80"; //SARP;
 
 var PNG_HEADER = new Uint8Array([137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82]);
 
@@ -23,29 +27,26 @@ class DataManager
         this.asd = new Uint8Array();
         this.id = "123";
         this.isConnected = false;
-        
-        this.startSocket();
-        
-        this.startXmlHttpRequest();
-        
         this.dataTmp = new Uint8Array([]);
         
-        this.imageWidth = 1920;
-        this.imageHeight = 1280;
-        this.rectWidth = 100;
-        
+        this.loginClass = null;
         this.displayField = null;
-        this.canvas = null;
-        this.ctx = null;
+    }
+    
+    initDataManager()
+    {
+        this.startSocket();
+        this.startXmlHttpRequest();
     }
     
     startSocket()
     {
         this.webSocket = new WebSocket('ws://' + window.location.hostname + ':8081/');
-        
+
         if(!this.webSocket)
             return;
-        
+
+        this.webSocket.binaryType = 'arraybuffer';
         this.webSocket.onopen = this.socketConnected();
         this.webSocket.onmessage = this.setData.bind(this);
     }
@@ -58,10 +59,8 @@ class DataManager
             {
                 this.isConnected = true;
                 
-                this.webSocket.binaryType = 'arraybuffer';
-                this.webSocket.send(KEY_GET_IMAGE);
-                
-                console.log("KEY_GET_IMAGE sended");
+//                this.webSocket.send(KEY_GET_IMAGE);
+//                console.log("KEY_GET_IMAGE sended");
             }
             else console.log("try 'startSession' but socket is not connected yet");
         }
@@ -75,7 +74,6 @@ class DataManager
     setData(event)
     {
         var data = event.data;
-
         var dataArray = new Uint8Array(data);
         var activeBuf = new Uint8Array(dataArray.length + this.dataTmp.length);
         activeBuf.set(this.dataTmp, 0);
@@ -117,20 +115,44 @@ class DataManager
 
         var command = cmd.toString();
 
-        if(command === KEY_IMAGE_PARAM)
+        if(command === KEY_SET_NONCE)
         {
-            this.imageWidth = this.uint16FromArray(data.subarray(0,2));
-            this.imageHeight = this.uint16FromArray(data.subarray(2,4));
-            this.rectWidth = this.uint16FromArray(data.subarray(4,6));
-            
-            if(this.canvas)
+            if(this.loginClass)
             {
-                this.canvas.width = this.imageWidth;
-                this.canvas.height = this.imageHeight;
+                this.loginClass.createLoginHtml();
+                this.loginClass.setNonce(btoa(String.fromCharCode.apply(null, data)));
+            }
+        }
+        else if(command === KEY_SET_AUTH_RESPONSE)
+        {
+            var response = this.uint16FromArray(data);
+            
+            if(response === 1)
+            {
+                if(this.loginClass)
+                    this.loginClass.removeLoginHtml();
                 
                 if(this.displayField)
-                    this.displayField.updateGeometry();
+                    this.displayField.initDisplayField();
+                
+                this.webSocket.send(KEY_GET_IMAGE);
+                console.log("KEY_GET_IMAGE sended");
             }
+            else
+            {
+                if(this.loginClass)
+                    this.loginClass.showWrongRequest();
+            }
+            
+        }
+        else if(command === KEY_IMAGE_PARAM)
+        {
+            var imageWidth = this.uint16FromArray(data.subarray(0,2));
+            var imageHeight = this.uint16FromArray(data.subarray(2,4));
+            var rectWidth = this.uint16FromArray(data.subarray(4,6));
+            
+            if(this.displayField)
+                this.displayField.setImageParameters(imageWidth,imageHeight,rectWidth);
         }
         else if(command === KEY_IMAGE_TILE)
         {
@@ -143,26 +165,10 @@ class DataManager
             rawData.set(PNG_HEADER,0);
             rawData.set(data.subarray(6,data.length),PNG_HEADER.length);
 
-            var b64encoded = btoa(String.fromCharCode.apply(null, rawData));
-
-            var image = new Image();
-            image.posX = posX * this.rectWidth;
-            image.posY = posY * this.rectWidth;
-            image.ctx = this.ctx;
-            image.dataManager = this;
-            image.width = this.rectWidth;
-            image.height = this.rectWidth;
-            image.tileNum = tileNum;
-
-            image.onload = function()
-            {
-                this.ctx.drawImage(this, this.posX, this.posY, this.width, this.height);
-                this.dataManager.sendParameters(KEY_TILE_RECEIVED,this.tileNum,0);
-            }
-
-            var base64Png = 'data:image/png;base64,';
-            base64Png += b64encoded;
-            image.src = base64Png;
+            var b64encoded = 'data:image/png;base64,' + btoa(String.fromCharCode.apply(null, rawData));
+            
+            if(this.displayField)
+                this.displayField.setImageData(posX, posY, b64encoded, tileNum);
         }
         else console.log("newData:",command.toString(),command,data);
     }
@@ -191,9 +197,16 @@ class DataManager
         if(dField)
         {
             this.displayField = dField;
-            this.canvas = dField.getCanvas();
-            this.ctx = canvas.getContext('2d');
             dField.setDataManager(this);
+        }
+    }
+    
+    setLoginClass(lClass)
+    {
+        if(lClass)
+        {
+            this.loginClass = lClass;
+            lClass.setDataManager(this);
         }
     }
     

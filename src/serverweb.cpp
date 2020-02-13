@@ -18,7 +18,7 @@ bool ServerWeb::initServer(quint16 port)
     if(m_webSocketServer->listen(QHostAddress::Any, port))
     {
         qDebug()<<"OK: Web-Server is started on port: "<<port;
-        connect(m_webSocketServer,SIGNAL(newConnection()),this,SLOT(newSocketConnection()));
+        connect(m_webSocketServer,SIGNAL(newConnection()),this,SLOT(setSocketConnected()));
         result = true;
     }
     else qDebug()<<"ERROR: Web-Server is not started on port:"<<port;
@@ -52,7 +52,7 @@ void ServerWeb::sendDataToAll(const QByteArray &data)
         m_webClients.at(i)->sendBinaryMessage(data);
 }
 
-void ServerWeb::newSocketConnection()
+void ServerWeb::setSocketConnected()
 {
     QWebSocket *socket = m_webSocketServer->nextPendingConnection();
 
@@ -63,12 +63,14 @@ void ServerWeb::newSocketConnection()
 
     connect(socket,SIGNAL(binaryMessageReceived(QByteArray)),this,SLOT(binData(QByteArray)));
     connect(socket,SIGNAL(textMessageReceived(QString)),this,SLOT(textData(QString)));
-    connect(socket,SIGNAL(disconnected()),this,SLOT(socketDisconnected()));
+    connect(socket,SIGNAL(disconnected()),this,SLOT(setSocketDisconnected()));
 
     m_webClients.append(socket);
+
+    emit socketConnected(uuidArr);
 }
 
-void ServerWeb::socketDisconnected()
+void ServerWeb::setSocketDisconnected()
 {
     QWebSocket *socket = static_cast<QWebSocket*>(sender());
 
@@ -78,6 +80,8 @@ void ServerWeb::socketDisconnected()
 
     m_webClients.removeOne(socket);
     socket->deleteLater();
+
+    emit socketDisconnected(uuidArr);
 
     if(m_webClients.size() == 0)
         emit disconnectedAll();

@@ -1,5 +1,6 @@
 body, html {
-    background: black;
+    background: #555;
+    position: absolute;
     margin: 0;
     padding: 0;
     width: 100%;
@@ -14,19 +15,12 @@ body, html {
     user-select: none;
 }
 
-#container {
-    position: absolute;
-    width: 100%;
-    height: 100%;
+div {
+    user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
     margin: 0;
     padding: 0;
-}
-
-#canvas {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    z-index: 0;
 }
 
 #topMenu {
@@ -39,6 +33,7 @@ body, html {
     width: 300px;
     height: 26px;
     z-index: 3;
+    visibility: hidden;
 }
 
 .extraKey {
@@ -74,16 +69,6 @@ body, html {
 #btnChangeMonitor {width: 28px; right: 31px;}
 #btnFullscrean {width: 28px; right: 0px;}
 
-#cursor {
-    position: absolute;
-    margin: 0;
-    padding: 0;
-    width: 10px;
-    height: 10px;
-    z-index: 2;
-    visibility: hidden;
-}
-
 svg {
     display: block;
     position: relative;
@@ -93,34 +78,9 @@ svg {
     height: calc(100% - 6px);
 }
 
-svg#svgCursor {
-    position: absolute;
-    margin: 0;
-    padding: 0;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-}
-
 #keyboard {
     position: absolute;
     background: none;
     z-index: 3;
     visibility: hidden;
-}
-
-.field {
-    position: absolute;
-    z-index: 1;
-}
-
-#cursorField {
-    position: absolute;
-    margin: 0;
-    padding: 0;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
 }

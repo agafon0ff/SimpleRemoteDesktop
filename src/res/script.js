@@ -1,18 +1,21 @@
 document.addEventListener("DOMContentLoaded", documentIsLoaded);
 
-var dManager = null;
+var dataManager = null;
 var displayField = null;
+var loginClass = null;
 
 function documentIsLoaded()
 {
     checkDeviceType();
     initExtraKeys();
     
+    loginClass = new LoginClass();
     displayField = new DisplayField();
     
-    dManager = new DataManager();
-    dManager.setDisplayField(displayField);
-    dManager.updateGeometry = displayField.updateGeometry();
+    dataManager = new DataManager();
+    dataManager.setLoginClass(loginClass);
+    dataManager.setDisplayField(displayField);
+    dataManager.initDataManager();
 }
 
 function initExtraKeys()
@@ -40,15 +43,15 @@ function extraKeyStateChanged(key,state)
     var num = key.getAttribute("num");
 
     if(num === "1111")
-    {if(state)dManager.sendToSocket(KEY_CHANGE_DISPLAY);}
+    {if(state)dataManager.sendToSocket(KEY_CHANGE_DISPLAY);}
     else if(num === "1112")
     {if(state)showFulScreen();}
     else if(num === "1113")
     {if(state)showKeyboard();}
-    else {dManager.sendParameters(KEY_SET_KEY_STATE,num,state);}
+    else {dataManager.sendParameters(KEY_SET_KEY_STATE,num,state);}
 }
 
 function showKeyboard()
 {
-    
+
 }

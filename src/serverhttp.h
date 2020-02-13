@@ -29,14 +29,14 @@ public slots:
     void setPort(quint16 port);
     void setPath(const QString &path);
     void sendResponse(QTcpSocket* socket, const QString &path, const QByteArray &data);
+    QByteArray getData(const QString &name);
+    QByteArray createHeader(const QString &path, int dataSize);
 
 private slots:
     void newSocketConnected();
     void socketDisconneted();
     void readDataFromSocket();
     void requestHandler(QTcpSocket* socket, const QString &method, const QString &path, const QMap<QString,QString> &cookies, const QByteArray &requestData);
-    QByteArray getData(const QString &name);
-    QByteArray createHeader(const QString &path, int dataSize);
     void updateFilesList();
 };
 #endif // SERVERHTTP_H

@@ -21,6 +21,8 @@ private:
     QByteArray m_dataTmp;
 
 signals:
+    void socketConnected(const QByteArray &uuid);
+    void socketDisconnected(const QByteArray &uuid);
     void textFromSocket(const QByteArray &uuid, const QString &text);
     void dataFromSocket(const QByteArray &uuid, const QByteArray &data);
     void disconnectedAll();
@@ -34,8 +36,8 @@ public slots:
     void sendDataToAll(const QByteArray &data);
 
 private slots:
-    void newSocketConnection();
-    void socketDisconnected();
+    void setSocketConnected();
+    void setSocketDisconnected();
     void textData(const QString &text);
     void binData(const QByteArray &buf);
 };

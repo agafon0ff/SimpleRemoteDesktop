@@ -8,5 +8,7 @@
         <file>res/displayField.js</file>
         <file>res/dataManager.js</file>
         <file>res/sundries.js</file>
+        <file>res/loginClass.js</file>
+        <file>res/md5.js</file>
     </qresource>
 </RCC>
