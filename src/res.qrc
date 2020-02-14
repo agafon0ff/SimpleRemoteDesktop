@@ -2,13 +2,11 @@
     <qresource prefix="/">
         <file>res/favicon.ico</file>
         <file>res/index.html</file>
-        <file>res/script.js</file>
-        <file>res/style.css</file>
         <file>res/keyboard.html</file>
         <file>res/displayField.js</file>
         <file>res/dataManager.js</file>
-        <file>res/sundries.js</file>
         <file>res/loginClass.js</file>
         <file>res/md5.js</file>
+        <file>res/extraKeys.js</file>
     </qresource>
 </RCC>

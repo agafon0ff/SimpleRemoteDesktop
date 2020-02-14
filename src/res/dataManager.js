@@ -31,6 +31,7 @@ class DataManager
         
         this.loginClass = null;
         this.displayField = null;
+        this.extraKeys = null;
     }
     
     initDataManager()
@@ -135,6 +136,9 @@ class DataManager
                 if(this.displayField)
                     this.displayField.initDisplayField();
                 
+                if(this.extraKeys)
+                    this.extraKeys.createExtraKeysHtml();
+                
                 this.webSocket.send(KEY_GET_IMAGE);
                 console.log("KEY_GET_IMAGE sended");
             }
@@ -210,6 +214,15 @@ class DataManager
         }
     }
     
+    setExtraKeys(eKeys)
+    {
+        if(eKeys)
+        {
+            this.extraKeys = eKeys;
+            eKeys.setDataManager(this);
+        }
+    }
+    
     sendParameters(key, param1, param2)
     {
         var posSize = this.arrayFromUint16(4);
@@ -259,8 +272,10 @@ class DataManager
     readFromXmlHttpRequest()
     {
         var data = this.xmlHttpRequest.responseText;
+        var url = this.xmlHttpRequest.responseURL;
         
-        console.log("readFromXmlHttpRequest:", data);
+        if(url.includes('keyboard.html'))
+            this.displayField.setKeyboardHtml(data);
     }
 
     sendToXmlHttpRequest(method, request, data)

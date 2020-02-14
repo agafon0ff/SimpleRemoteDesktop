@@ -22,6 +22,7 @@ class DisplayField
         this.scaleSize = 0;
         this.canvasRect = new Rect(0,0,1920,1280);
         this.deltaRect = new Rect(0,0,0,0);
+        this.isMobilePhone  = /Android|webOS|iPhone|iPad|iPod|BlackBerry/i.test(navigator.userAgent);
     }
     
     initDisplayField()
@@ -33,7 +34,7 @@ class DisplayField
         window.addEventListener('resize', this.updateGeometry.bind(this));
         window.addEventListener("blur", this.leavePageEvent.bind(this));
         
-        if(isMobilePhone)
+        if(this.isMobilePhone)
             this.initTouchField();
         else this.initMouseField();
         
@@ -282,17 +283,35 @@ class DisplayField
     {
         this.width = window.innerWidth;
         this.height = window.innerHeight;
+        var fieldHeight = this.height;
+        
+        if(this.keyboard.style.visibility === "visible")
+        {
+            if(this.width < this.height)
+                rect = new Rect(0,this.height/3*2,this.width,this.height/3);
+            else
+            {
+                rect = this.proportionalResizing(0, this.height/2, this.width, this.height/2, 100, 30);
+                rect.y = this.height - rect.h;
+            }
+            
+            keyboard.style.left = rect.x + "px";
+            keyboard.style.top = rect.y + "px";
+            keyboard.style.width = rect.w + "px";
+            keyboard.style.height = rect.h + "px";
+            fieldHeight -= rect.h;
+        }
 
         var rect;
 
         if(this.width < this.canvas.width || this.height < this.canvas.height)
         {
-            rect = proportionalResizing(0, 0, this.width, this.height, this.canvas.width, this.canvas.height);
+            rect = this.proportionalResizing(0, 0, this.width, fieldHeight, this.canvas.width, this.canvas.height);
         }
         else
         {
             rect = new Rect(this.width/2 - this.canvas.width/2,
-                            this.height/2 - this.canvas.height/2,
+                            fieldHeight/2 - this.canvas.height/2,
                             this.canvas.width,
                             this.canvas.height);
         }
@@ -461,6 +480,82 @@ class DisplayField
         this.cursor.append(svgCursor);
         
         document.body.append(this.cursorField);
+        
+        this.keyboard = document.createElement('div');
+        this.keyboard.id = 'keyboard';
+        this.keyboard.isLoaded = false;
+        this.keyboard.style.cssText = 
+            'position: absolute;\
+            background: none;\
+            z-index: 3;\
+            visibility: hidden;';
+        
+        document.body.append(this.keyboard);
+    }
+    
+    showKeyboard()
+    {
+        if(!this.keyboard.isLoaded)
+            this.dataManager.sendToXmlHttpRequest('GET', 'keyboard.html', '');
+        
+        if(this.keyboard.style.visibility === "visible")
+            this.keyboard.style.visibility = "hidden";
+        else this.keyboard.style.visibility = "visible";
+        
+        this.updateGeometry();
+    }
+    
+    setKeyboardHtml(text)
+    {
+        this.keyboard.isLoaded = true;
+        this.keyboard.innerHTML = text;
+        
+        var keys = this.keyboard.getElementsByClassName('key');
+
+        if(this.isMobilePhone)
+        {
+            for(var j=0;j<keys.length;++j) {
+                keys[j].addEventListener('touchstart', this.keyboardKeyStateChanged.bind(this,keys[j],1));
+                keys[j].addEventListener('touchend', this.keyboardKeyStateChanged.bind(this,keys[j],0));
+            }
+        }
+        else
+        {
+            for(var i=0;i<keys.length;++i) {
+                keys[i].addEventListener('mousedown', this.keyboardKeyStateChanged.bind(this,keys[i],1));
+                keys[i].addEventListener('mouseup', this.keyboardKeyStateChanged.bind(this,keys[i],0));
+            }
+        }
+    }
+    
+    keyboardKeyStateChanged(key,state,event)
+    {
+        var num = key.getAttribute("num");
+        this.dataManager.sendParameters(KEY_SET_KEY_STATE,num,state);
+    }
+    
+    proportionalResizing(rectX, rectY, rectW, rectH, ratioW, ratioH)
+    {
+        var sSolution = ((rectW * ratioH) / rectH);
+
+        var sRect = new Rect(rectX,rectY,rectW,rectH);
+
+        if(sSolution > ratioW) {
+            sRect.w = (ratioW * rectH) / ratioH;
+            sRect.x = rectX + (rectW / 2) - (sRect.w / 2);
+        } else {
+            sRect.h = (ratioH * rectW) / ratioW;
+            sRect.y = rectY + (rectH / 2) - (sRect.h / 2);
+        }
+
+        return sRect;
     }
 }
 
+function Rect(x, y, w, h)
+{
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+}

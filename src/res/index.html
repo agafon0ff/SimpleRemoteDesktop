@@ -6,74 +6,78 @@
     <meta name='viewport' content='width=device-width,user-scalable=no'>
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <link rel="stylesheet" href="style.css"/>
+    
+    <style>
+    
+        body, html {
+            background: #555;
+            position: absolute;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            position: fixed;
+            overflow: hidden;
+            -moz-user-select: none;
+            -o-user-select: none;
+            -khtml-user-select: none;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        div {
+            user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        svg {
+            display: block;
+            position: relative;
+            left: 3px;
+            top: 3px;
+            width: calc(100% - 6px);
+            height: calc(100% - 6px);
+        }
+        
+    </style>
+    
 </head>
 <body>
+   
+    <script>
+    
+        document.addEventListener("DOMContentLoaded", documentIsLoaded);
 
-    <div id="topMenu">
+        var dataManager = null;
+        var displayField = null;
+        var loginClass = null;
+        var extraKeys = null;
 
-        <div id="btnEsc" class="extraKey" num="27">
-            <svg width="24" height="24" viewBox="0 0 24 24">
-                <text x="-5" y="20" font-size="20" fill="white">Esc</text>
-            </svg>
-        </div>
+        function documentIsLoaded()
+        {    
+            loginClass = new LoginClass();
+            displayField = new DisplayField();
 
-        <div id="btnShift" class="extraKey" num="16">
-            <svg width="24" height="24" viewBox="0 0 24 24">
-                <text x="-12" y="20" font-size="20" fill="white">Shift</text>
-            </svg>
-        </div>
+            extraKeys = new ExtraKeys();
+            extraKeys.setDisplayField(displayField);
 
-        <div id="btnCtrl" class="extraKey" num="17">
-            <svg width="24" height="24" viewBox="0 0 24 24">
-                <text x="-7" y="20" font-size="20" fill="white">Ctrl</text>
-            </svg>
-        </div>
-
-        <div id="btnWin" class="extraKey" num="91">
-            <svg width="24" height="24" viewBox="0 0 24 24">
-                <path d="M1,5 L11,3 L11,11 L1,11Z M1,13z L11,13 L11,21 L1,19Z M13,13 L23,13 L23,22 L13,21Z M13,11 L13,3 L23,2 L23,11Z" fill="white"/>
-            </svg>
-        </div>
-
-        <div id="btnAlt" class="extraKey" num="18">
-            <svg width="24" height="24" viewBox="0 0 24 24">
-                <text x="-3" y="20" font-size="20" fill="white">Alt</text>
-            </svg>
-        </div>
-
-        <div id="btnShowKeyboard" class="extraKey" title="Показать клавиатуру" num="1113">
-            <svg width="24" height="24" viewBox="0 0 24 24">
-            <path d="M12,5 L12,7 L23,7 L23,22 L1,22 L1,7 L12,7 
-            M3,10 L5,10 M7,10 L9,10 M11,10 L13,10 M15,10 L17,10 M19,10 L21,10
-            M3,14 L5,14 M7,14 L9,14 M11,14 L13,14 M15,14 L17,14 M19,14 L21,14
-            M3,18 L5,18 M7,18 L17,18 M19,18 L21,18
-                " stroke="white" stroke-width="2" fill="none"/>
-            </svg>
-        </div>
-
-        <div id="btnChangeMonitor" class="extraKey" title="Переключить монитор" num="1111">
-            <svg width="24" height="24" viewBox="0 0 24 24">
-                <path d="M19,5 L23,5 L23,19 L14,19 L14,22 L21,23 L7,23 L14,22 L14,19 L5,19 L5,5 L19,5 L19,1 L1,1 L1,15 L5,15" stroke="white" stroke-width="2" fill="none"/>
-            </svg>
-        </div>
-
-        <div id="btnFullscrean" class="extraKey" title="Развернуть на весь экран" num="1112">
-            <svg width="24" height="24" viewBox="0 0 24 24">
-                <path d="M24 9h-4v-5h-5v-4h9v9zm-9 15v-4h5v-5h4v9h-9zm-15-9h4v5h5v4h-9v-9zm9-15v4h-5v5h-4v-9h9z" fill="white"/>
-            </svg>
-        </div>
-
-    </div>
-
-    <div id="keyboard"></div>
-
-    <script src="script.js"></script>
-    <script src="sundries.js"></script>
+            dataManager = new DataManager();
+            dataManager.setLoginClass(loginClass);
+            dataManager.setDisplayField(displayField);
+            dataManager.setExtraKeys(extraKeys);
+            dataManager.initDataManager();
+        }
+        
+    </script>
+   
+    <script src="extraKeys.js"></script>
     <script src="loginClass.js"></script>
     <script src="dataManager.js"></script>
     <script src="displayField.js"></script>
     <script src="md5.js"></script>
-
 </body>
 </html>

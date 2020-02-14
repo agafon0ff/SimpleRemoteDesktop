@@ -73,7 +73,7 @@ class LoginClass
         this.loginBox.append(this.inputLogin);
         
         this.inputPass = document.createElement('input');
-        this.inputPass.id = 'inputLogin';
+        this.inputPass.id = 'inputPass';
         this.inputPass.type = 'password';
         this.inputPass.attributes.required = "requiredd";
         this.inputPass.style.cssText = cssInput + 'top: 50%;';
