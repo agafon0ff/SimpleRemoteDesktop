@@ -85,6 +85,7 @@ class LoginClass
         this.btnSubmit.value = 'Ввод';
         this.btnSubmit.style.cssText = 'position: absolute; \
             background: #676; \
+            font: 16px monospace; \
             color: white; \
             border: 1px solid #777; \
             border-radius: 5px; \

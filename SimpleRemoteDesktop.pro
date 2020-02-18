@@ -33,4 +33,5 @@ HEADERS += \
 RESOURCES += \
     src/res.qrc
 
-linux-g++: LIBS += -lX11 -lXtst
+linux-g++: \
+    LIBS += -lX11 -lXtst
