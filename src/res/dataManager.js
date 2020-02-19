@@ -32,6 +32,7 @@ class DataManager
         this.loginClass = null;
         this.displayField = null;
         this.extraKeys = null;
+        this.messageField = null;
     }
     
     initDataManager()
@@ -45,11 +46,15 @@ class DataManager
         this.webSocket = new WebSocket('ws://' + window.location.hostname + ':8081/');
 
         if(!this.webSocket)
+        {
+            this.showDisconnectMessage();
             return;
+        }
 
         this.webSocket.binaryType = 'arraybuffer';
-        this.webSocket.onopen = this.socketConnected();
+        this.webSocket.onopen = this.socketConnected.bind(this);
         this.webSocket.onmessage = this.setData.bind(this);
+        this.webSocket.onclose = this.showDisconnectMessage.bind(this);
     }
     
     startSession()
@@ -59,11 +64,13 @@ class DataManager
             if(this.webSocket.readyState === WebSocket.OPEN)
             {
                 this.isConnected = true;
-                
-//                this.webSocket.send(KEY_GET_IMAGE);
-//                console.log("KEY_GET_IMAGE sended");
+                this.removeDisconnectMessage();
             }
-            else console.log("try 'startSession' but socket is not connected yet");
+            else
+            {
+                this.showDisconnectMessage();
+                console.log("try 'startSession' but socket is not connected yet");
+            }
         }
     }
     
@@ -283,5 +290,64 @@ class DataManager
         this.xmlHttpRequest.open(method, request);
         this.xmlHttpRequest.send(data);
     }
+    
+    showDisconnectMessage()
+    {
+        if(this.messageField)
+            return;
+        
+        this.messageField = document.createElement('div');
+        this.messageField.id = 'messageField';
+        this.messageField.style.cssText = 'position:absolute;\
+            margin:0; \
+            padding:0; \
+            left:0; \
+            top:0; \
+            width:100%; \
+            height:100%; \
+            z-index:10; \
+            background: #111;';
+        
+        this.messageLabel = document.createElement('div');
+        this.messageLabel.id = 'messageLabel';
+        this.messageLabel.innerHTML = 'ERROR: No connection to server!';
+        this.messageLabel.style.cssText = 'position: absolute; \
+            background: none; \
+            color: #b00; \
+            font: 14px monospace; \
+            text-align: center; \
+            letter-spacing: 1px; \
+            line-height: 30px; \
+            border: none; \
+            top: calc(50% - 15px); \
+            left: calc(50% - 125px); \
+            width: 300px; \
+            height: 30px;';
+        this.messageField.append(this.messageLabel);
+        
+        this.messageImg = document.createElement("img");
+        this.messageImg.id = 'messageImg';
+        this.messageImg.src = "favicon.ico";
+        this.messageImg.style.cssText = 'position: absolute; \
+            border: none; \
+            top: calc(50% - 15px); \
+            left: calc(50% - 160px); \
+            width: 30px; \
+            height: 30px;';
+        this.messageField.append(this.messageImg);
+
+        document.body.append(this.messageField);
+    }
+    
+    removeDisconnectMessage()
+    {
+        if(this.messageField)
+        {
+            this.messageField.remove;
+            this.messageField = null;
+        }
+    }
+    
+    
     // ________________________________________________
 }

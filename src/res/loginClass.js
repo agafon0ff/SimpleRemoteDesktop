@@ -19,8 +19,36 @@ class LoginClass
             width:100%; \
             height:100%; \
             z-index:10; \
-            background: #555;';
+            background: #111;';
         
+        this.titleLabel = document.createElement('div');
+        this.titleLabel.id = 'titleLabel';
+        this.titleLabel.innerHTML = 'Simple Remote Desktop';
+        this.titleLabel.style.cssText = 'position: absolute; \
+            background: none; \
+            color: white; \
+            font: 16px monospace; \
+            text-align: center; \
+            letter-spacing: 1px; \
+            line-height: 30px; \
+            border: none; \
+            top: calc(50% - 135px); \
+            left: calc(50% - 130px); \
+            width: 300px; \
+            height: 30px;';
+        this.loginField.append(this.titleLabel);
+        
+        this.titleImg = document.createElement("img");
+        this.titleImg.id = 'titleImg';
+        this.titleImg.src = "favicon.ico";
+        this.titleImg.style.cssText = 'position: absolute; \
+            border: none; \
+            top: calc(50% - 135px); \
+            left: calc(50% - 135px); \
+            width: 30px; \
+            height: 30px;';
+        this.loginField.append(this.titleImg);
+
         this.loginBox = document.createElement('div');
         this.loginBox.id = 'loginBox';
         this.loginBox.style.cssText = 'position: absolute; \
@@ -43,13 +71,13 @@ class LoginClass
         
         this.labelLogin = document.createElement('label');
         this.labelLogin.id = 'labelLogin';
-        this.labelLogin.innerHTML = 'Логин:';
+        this.labelLogin.innerHTML = 'Login:';
         this.labelLogin.style.cssText = cssLabel + 'top: 9%;';
         this.loginBox.append(this.labelLogin);
         
         this.labelPass = document.createElement('label');
         this.labelPass.id = 'labelPass';
-        this.labelPass.innerHTML = 'Пароль:';
+        this.labelPass.innerHTML = 'Password:';
         this.labelPass.style.cssText = cssLabel + 'top: 38%;';
         this.loginBox.append(this.labelPass);
         
@@ -82,7 +110,7 @@ class LoginClass
         this.btnSubmit = document.createElement('input');
         this.btnSubmit.id = 'btnSubmit';
         this.btnSubmit.type = 'submit';
-        this.btnSubmit.value = 'Ввод';
+        this.btnSubmit.value = 'Submit';
         this.btnSubmit.style.cssText = 'position: absolute; \
             background: #676; \
             font: 16px monospace; \
@@ -101,7 +129,25 @@ class LoginClass
         this.loginBox.append(this.btnSubmit);
         
         this.loginField.append(this.loginBox);
+        
+        this.statusLabel = document.createElement('div');
+        this.statusLabel.id = 'titleLabel';
+        this.statusLabel.style.cssText = 'position: absolute; \
+            background: none; \
+            color: #900; \
+            text-align: center; \
+            font: 12px monospace; \
+            letter-spacing: 1px; \
+            line-height: 30px; \
+            border: none; \
+            top: calc(50% + 110px); \
+            left: calc(50% - 150px); \
+            width: 300px; \
+            height: 30px;';
+        this.loginField.append(this.statusLabel);
+        
         document.body.append(this.loginField);
+        window.addEventListener("keyup", this.keyStateChanged.bind(this));
     }
     
     removeLoginHtml()
@@ -111,6 +157,9 @@ class LoginClass
     
     showWrongRequest()
     {
+        this.inputLogin.value = '';
+        this.inputPass.value = '';
+        this.statusLabel.innerHTML = 'ERROR: wrong login or password!';
         console.log("Wrong login pass!");
     }
     
@@ -149,4 +198,9 @@ class LoginClass
             this.dataManager.sendToSocket(buf);
     }
     
+    keyStateChanged(event)
+    {
+        if(event.keyCode == 13)
+            this.btnSubmitClicked();
+    }
 }
