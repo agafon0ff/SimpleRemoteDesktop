@@ -20,7 +20,8 @@ SOURCES += \
     src/unitingclass.cpp \
     src/graberclass.cpp \
     src/dataparser.cpp \
-    src/inputsimulator.cpp
+    src/inputsimulator.cpp \
+    src/socketweb.cpp
 
 HEADERS += \
     src/serverhttp.h \
@@ -28,7 +29,8 @@ HEADERS += \
     src/unitingclass.h \
     src/graberclass.h \
     src/dataparser.h \
-    src/inputsimulator.h
+    src/inputsimulator.h \
+    src/socketweb.h
 
 RESOURCES += \
     src/res.qrc

@@ -8,6 +8,7 @@
 UnitingClass::UnitingClass(QObject *parent) : QObject(parent),
     m_serverHttp(new ServerHttp(this)),
     m_serverWeb(new ServerWeb(this)),
+    m_socketWeb(new SocketWeb(this)),
     m_dataParser(new DataParser(this)),
     m_graberClass(new GraberClass(this)),
     m_inputSimulator(new InputSimulator(this)),
@@ -53,6 +54,10 @@ UnitingClass::UnitingClass(QObject *parent) : QObject(parent),
     connect(m_dataParser,SIGNAL(setMouseDelta(qint16,qint16)),m_inputSimulator,SLOT(setMouseDelta(qint16,qint16)));
 
     m_graberClass->start();
+
+    QString url = "ws://127.0.0.1:8765";
+    m_socketWeb->setUrl(url);
+    m_socketWeb->start();
 }
 
 void UnitingClass::actionTriggered(QAction *action)

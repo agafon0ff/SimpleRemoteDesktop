@@ -9,6 +9,7 @@
 
 #include "serverhttp.h"
 #include "serverweb.h"
+#include "socketweb.h"
 #include "dataparser.h"
 #include "graberclass.h"
 #include "inputsimulator.h"
@@ -23,6 +24,7 @@ private:
 
     ServerHttp *m_serverHttp;
     ServerWeb *m_serverWeb;
+    SocketWeb *m_socketWeb;
     DataParser *m_dataParser;
     GraberClass *m_graberClass;
     InputSimulator *m_inputSimulator;
