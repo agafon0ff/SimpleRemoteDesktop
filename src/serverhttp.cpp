@@ -39,8 +39,19 @@ bool ServerHttp::start()
 
 void ServerHttp::stop()
 {
-    if(m_tcpServer->isListening())
-        m_tcpServer->close();
+    foreach(QTcpSocket* socket, m_tcpSockets)
+        socket->disconnectFromHost();
+
+    if(m_tcpServer)
+    {
+        if(m_tcpServer->isListening())
+            m_tcpServer->close();
+
+        m_tcpServer->deleteLater();
+        m_tcpServer = Q_NULLPTR;
+    }
+
+    emit finished();
 }
 
 void ServerHttp::setPort(quint16 port)

@@ -21,6 +21,7 @@ private:
     QStringList m_filesList;
 
 signals:
+    void finished();
     void request(QTcpSocket *socket, const QString &method, const QString &path,
                  const QMap<QString,QString> &cookies, const QByteArray &requestData);
 
