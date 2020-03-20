@@ -55,9 +55,9 @@ UnitingClass::UnitingClass(QObject *parent) : QObject(parent),
 
     m_graberClass->start();
 
-    QString url = "ws://127.0.0.1:8765";
-    m_socketWeb->setUrl(url);
-    m_socketWeb->start();
+//    QString url = "ws://127.0.0.1:8765";
+//    m_socketWeb->setUrl(url);
+//    m_socketWeb->start();
 }
 
 void UnitingClass::actionTriggered(QAction *action)

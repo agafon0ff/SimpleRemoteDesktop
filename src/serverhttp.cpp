@@ -59,17 +59,27 @@ void ServerHttp::setPath(const QString &path)
         m_path.append("/");
 }
 
-void ServerHttp::sendResponse(QTcpSocket *socket, const QString &path, const QByteArray &data)
+void ServerHttp::sendResponse(QTcpSocket *socket, const QByteArray &data)
 {
     if(!socket)
         return;
 
-    QByteArray response = createHeader(path,data.size());
+    socket->write(data);
+    socket->waitForBytesWritten(1000);
+    socket->disconnectFromHost();
+}
+
+void ServerHttp::requestHandler(QTcpSocket *socket, const QString &method, const QString &path, const QMap<QString,QString> &cookies, const QByteArray &requestData)
+{
+    Q_UNUSED(cookies);
+    Q_UNUSED(method);
+    Q_UNUSED(requestData);
+
+    QByteArray data = getData(path);
+    QByteArray response = createHeader(path,data.size(),QStringList());
     response.append(data);
 
-    socket->write(response);
-    socket->waitForBytesWritten(100);
-    socket->disconnectFromHost();
+    sendResponse(socket, response);
 }
 
 QByteArray ServerHttp::getData(const QString &name)
@@ -106,7 +116,7 @@ QByteArray ServerHttp::getData(const QString &name)
     return result;
 }
 
-QByteArray ServerHttp::createHeader(const QString &path, int dataSize)
+QByteArray ServerHttp::createHeader(const QString &path, int dataSize, const QStringList &cookies)
 {
     QByteArray code = "200 OK\r\n";
 
@@ -140,6 +150,10 @@ QByteArray ServerHttp::createHeader(const QString &path, int dataSize)
     date.append(locale.toString(dt, "ddd, dd MMM yyyy hh:mm:ss"));
     date.append(" GMT\r\n");
 
+    QByteArray cookie;
+    foreach(QString oneCookie, cookies)
+        cookie.append("Set-Cookie: " + oneCookie + "\r\n");
+
     QByteArray result;
     result.append("HTTP/1.1 ");
     result.append(code);
@@ -147,8 +161,7 @@ QByteArray ServerHttp::createHeader(const QString &path, int dataSize)
     result.append(length);
     result.append("Vary: Accept-Encoding\r\n");
     result.append("Connection: keep-alive\r\n");
-//    result.append("Set-Cookie: firstCookie=hello; Max-Age=600; HttpOnly; Version=1\r\n");
-//    result.append("Set-Cookie: secondCookie=world; Max-Age=600; HttpOnly; Version=1\r\n");
+    result.append(cookie);
     result.append(date);
     result.append("\r\n");
 
@@ -158,7 +171,10 @@ QByteArray ServerHttp::createHeader(const QString &path, int dataSize)
 void ServerHttp::newSocketConnected()
 {
     QTcpSocket* socket = m_tcpServer->nextPendingConnection();
-//    QString address = QHostAddress(socket->peerAddress().toIPv4Address()).toString();
+
+    QString address = QHostAddress(socket->peerAddress().toIPv4Address()).toString();
+    Q_UNUSED(address);
+
     connect(socket,SIGNAL(disconnected()),this,SLOT(socketDisconneted()));
     connect(socket,SIGNAL(readyRead()),this,SLOT(readDataFromSocket()));
 
@@ -168,7 +184,10 @@ void ServerHttp::newSocketConnected()
 void ServerHttp::socketDisconneted()
 {
     QTcpSocket* socket = static_cast<QTcpSocket*>(sender());
-//    QString address = QHostAddress(socket->peerAddress().toIPv4Address()).toString();
+
+    QString address = QHostAddress(socket->peerAddress().toIPv4Address()).toString();
+    Q_UNUSED(address);
+
     m_tcpSockets.removeOne(socket);
 }
 
@@ -213,25 +232,9 @@ void ServerHttp::readDataFromSocket()
         }
     }
 
-    requestHandler(socket,method,path,cookies,requestData);
-}
-
-void ServerHttp::requestHandler(QTcpSocket *socket, const QString &method, const QString &path, const QMap<QString,QString> &cookies, const QByteArray &requestData)
-{
-    Q_UNUSED(cookies);
-
-    qDebug()<<"ServerHttp::requestHandler"<<socket<<method<<path<<requestData;
-
-    if(method == "GET")
-    {
-        sendResponse(socket,path,getData(path));
-    }
-    else if(method == "POST")
-    {
-        if(receivers(SIGNAL(postRequest(QTcpSocket*,QString,QByteArray))) == 0)
-            sendResponse(socket,path,getData(path));
-        else emit postRequest(socket,path,requestData);
-    }
+    if(receivers(SIGNAL(request(QTcpSocket*,QString,QString,QMap<QString,QString>,QByteArray))) != 0)
+        emit request(socket,method,path,cookies,requestData);
+    else requestHandler(socket,method,path,cookies,requestData);
 }
 
 void ServerHttp::updateFilesList()

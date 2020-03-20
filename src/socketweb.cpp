@@ -36,8 +36,6 @@ void SocketWeb::setUrl(const QString &url)
 
 void SocketWeb::socketStateChanged(QAbstractSocket::SocketState state)
 {
-    qDebug()<< "SocketWeb::socketStateChanged" << state;
-
     switch(state) {
     case QAbstractSocket::UnconnectedState:
         m_timerReconnect->start(1000);

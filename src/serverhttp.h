@@ -21,22 +21,23 @@ private:
     QStringList m_filesList;
 
 signals:
-    void postRequest(QTcpSocket* socket, const QString &path, const QByteArray &data);
+    void request(QTcpSocket *socket, const QString &method, const QString &path,
+                 const QMap<QString,QString> &cookies, const QByteArray &requestData);
 
 public slots:
     bool start();
     void stop();
     void setPort(quint16 port);
     void setPath(const QString &path);
-    void sendResponse(QTcpSocket* socket, const QString &path, const QByteArray &data);
+    void sendResponse(QTcpSocket* socket, const QByteArray &data);
+    void requestHandler(QTcpSocket* socket, const QString &method, const QString &path, const QMap<QString,QString> &cookies, const QByteArray &requestData);
     QByteArray getData(const QString &name);
-    QByteArray createHeader(const QString &path, int dataSize);
+    QByteArray createHeader(const QString &path, int dataSize, const QStringList &cookies);
 
 private slots:
     void newSocketConnected();
     void socketDisconneted();
     void readDataFromSocket();
-    void requestHandler(QTcpSocket* socket, const QString &method, const QString &path, const QMap<QString,QString> &cookies, const QByteArray &requestData);
     void updateFilesList();
 };
 #endif // SERVERHTTP_H
