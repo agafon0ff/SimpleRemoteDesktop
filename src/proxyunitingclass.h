@@ -4,6 +4,7 @@
 #include <QObject>
 #include "serverhttp.h"
 #include "serverweb.h"
+#include "dataparser.h"
 
 class ProxyUnitingClass : public QObject
 {
@@ -16,6 +17,7 @@ private:
     ServerHttp *m_serverHttp;
     ServerWeb *m_serverWebClients;
     ServerWeb *m_serverWebDesktops;
+    DataParser *m_dataParser;
 
 private slots:
     void loadSettings();

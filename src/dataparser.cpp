@@ -1,6 +1,5 @@
 #include "dataparser.h"
 #include <QCryptographicHash>
-#include <QBuffer>
 #include <QDebug>
 #include <QUuid>
 
@@ -20,7 +19,6 @@ static const QByteArray KEY_SET_AUTH_RESPONSE = "SARP";
 
 const int COMMAD_SIZE = 4;
 const int REQUEST_MIN_SIZE = 6;
-const int PNG_HEADER_SIZE = 16;
 
 DataParser::DataParser(QObject *parent) : QObject(parent),
     m_timerClearTmp(new QTimer(this))
@@ -52,6 +50,19 @@ void DataParser::setNewSocket(const QByteArray &uuid)
 void DataParser::removeSocket(const QByteArray &uuid)
 {
     m_socketsMap.remove(uuid);
+
+    bool isStopGraber = true;
+    foreach(SocketStruct socket, m_socketsMap.values())
+    {
+        if(socket.isAuthenticated)
+        {
+            isStopGraber = false;
+            break;
+        }
+    }
+
+    if(isStopGraber)
+        emit stopGraber();
 }
 
 void DataParser::setData(const QByteArray &uuid, const QByteArray &data)
@@ -117,21 +128,15 @@ void DataParser::sendImageParameters(const QSize &imageSize, int rectWidth)
             emit messageToSocket(sStruct.uuid,data);
 }
 
-void DataParser::sendImageTile(quint16 posX, quint16 posY, const QImage &image, quint16 tileNum)
+void DataParser::sendImageTile(quint16 posX, quint16 posY, const QByteArray &imageData, quint16 tileNum)
 {
-    QByteArray bArray;
-    QBuffer buffer(&bArray);
-    buffer.open(QIODevice::WriteOnly);
-    image.save(&buffer, "PNG");
-    bArray.remove(0,PNG_HEADER_SIZE);
-
     QByteArray data;
     data.append(KEY_IMAGE_TILE);
-    data.append(arrayFromUint16(static_cast<quint16>(bArray.size() + 6)));
+    data.append(arrayFromUint16(static_cast<quint16>(imageData.size() + 6)));
     data.append(arrayFromUint16(posX));
     data.append(arrayFromUint16(posY));
     data.append(arrayFromUint16(tileNum));
-    data.append(bArray);
+    data.append(imageData);
 
     foreach(SocketStruct sStruct, m_socketsMap.values())
         if(sStruct.isAuthenticated)

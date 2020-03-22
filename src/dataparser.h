@@ -3,7 +3,6 @@
 
 #include <QObject>
 #include <QSize>
-#include <QImage>
 #include <QTimer>
 #include <QMap>
 
@@ -55,7 +54,7 @@ public slots:
     void setData(const QByteArray &uuid, const QByteArray &data);
 
     void sendImageParameters(const QSize &imageSize, int rectWidth);
-    void sendImageTile(quint16 posX, quint16 posY, const QImage &image, quint16 tileNum);
+    void sendImageTile(quint16 posX, quint16 posY, const QByteArray &imageData, quint16 tileNum);
 
 private slots:
     void newData(const QByteArray &uuid, const QByteArray &command, const QByteArray &data);

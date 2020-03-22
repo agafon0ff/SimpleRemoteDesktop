@@ -40,7 +40,7 @@ private:
 signals:
     void finished();
     void imageParameters(const QSize &imageSize, int rectWidth);
-    void imageTile(quint16 posX, quint16 posY, const QImage &image, quint16 tileNum);
+    void imageTile(quint16 posX, quint16 posY, const QByteArray &imageData, quint16 tileNum);
     void screenPositionChanged(const QPoint &pos);
 
 public slots:
@@ -56,6 +56,7 @@ public slots:
     void setReceivedTileNum(quint16 num);
 
 private slots:
+    void sendImage(int posX, int posY, int tileNum, const QImage& image);
     bool isSendTilePermit();
 };
 

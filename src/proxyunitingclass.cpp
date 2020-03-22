@@ -1,11 +1,20 @@
 #include "proxyunitingclass.h"
 #include <QSettings>
 #include <QDebug>
+#include <QCoreApplication>
+
+int main(int argc, char *argv[])
+{
+    QCoreApplication a(argc, argv);
+    ProxyUnitingClass u;
+    return a.exec();
+}
 
 ProxyUnitingClass::ProxyUnitingClass(QObject *parent) : QObject(parent),
     m_serverHttp(new ServerHttp(this)),
     m_serverWebClients(new ServerWeb(this)),
-    m_serverWebDesktops(new ServerWeb(this))
+    m_serverWebDesktops(new ServerWeb(this)),
+    m_dataParser(new DataParser(this))
 {
     qDebug()<<"Create(ProxyUnitingClass)";
     loadSettings();
@@ -63,8 +72,9 @@ void ProxyUnitingClass::loadSettings()
 
     m_serverHttp->setPort(static_cast<quint16>(portHttp));
     m_serverHttp->setPath(filesPath);
-    m_serverHttp->start();
 
-    m_serverWebClients->initServer(static_cast<quint16>(portWebClient));
+    if(m_serverHttp->start())
+        m_serverWebClients->initServer(static_cast<quint16>(portWebClient));
+
     m_serverWebDesktops->initServer(static_cast<quint16>(portWebDesktop));
 }

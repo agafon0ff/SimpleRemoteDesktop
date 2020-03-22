@@ -6,6 +6,9 @@
 #include <QWindow>
 #include <QDesktopWidget>
 #include <QDebug>
+#include <QBuffer>
+
+const int PNG_HEADER_SIZE = 16;
 
 GraberClass::GraberClass(QObject *parent) : QObject(parent),
     m_grabTimer(Q_NULLPTR),
@@ -50,6 +53,8 @@ void GraberClass::changeScreenNum()
 
 void GraberClass::startSending()
 {
+    qDebug()<<"GraberClass::startSending";
+
     if(m_grabTimer)
         if(!m_grabTimer->isActive())
             m_grabTimer->start(m_grabInterval);
@@ -64,6 +69,8 @@ void GraberClass::startSending()
 
 void GraberClass::stopSending()
 {
+    qDebug()<<"GraberClass::stopSending";
+
     if(m_grabTimer)
         if(m_grabTimer->isActive())
             m_grabTimer->stop();
@@ -105,8 +112,7 @@ void GraberClass::updateImage()
 
             if(lastImage != image)
             {
-                emit imageTile(static_cast<quint16>(i),static_cast<quint16>(j),image,tileNum);
-
+                sendImage(i,j,tileNum,image);
                 m_currentTileNum = tileNum;
                 ++tileNum;
             }
@@ -120,6 +126,17 @@ void GraberClass::setReceivedTileNum(quint16 num)
 {
     m_permitCounter = 0;
     m_receivedTileNum = num;
+}
+
+void GraberClass::sendImage(int posX, int posY, int tileNum, const QImage &image)
+{
+    QByteArray bArray;
+    QBuffer buffer(&bArray);
+    buffer.open(QIODevice::WriteOnly);
+    image.save(&buffer, "PNG");
+    bArray.remove(0,PNG_HEADER_SIZE);
+
+    emit imageTile(static_cast<quint16>(posX),static_cast<quint16>(posY),bArray,static_cast<quint16>(tileNum));
 }
 
 bool GraberClass::isSendTilePermit()

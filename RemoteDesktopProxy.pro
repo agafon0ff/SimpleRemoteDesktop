@@ -7,15 +7,16 @@ CONFIG -= app_bundle
 INCLUDEPATH += src
 
 SOURCES += \
-    src/main.cpp \
     src/proxyunitingclass.cpp \
     src/serverhttp.cpp \
-    src/serverweb.cpp
+    src/serverweb.cpp \
+    src/dataparser.cpp
 
 HEADERS += \
     src/proxyunitingclass.h \
     src/serverhttp.h \
-    src/serverweb.h
+    src/serverweb.h \
+    src/dataparser.h
 
 RESOURCES += \
     src/res.qrc

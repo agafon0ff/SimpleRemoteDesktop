@@ -59,7 +59,7 @@ void ServerWeb::setSocketConnected()
     QByteArray uuidArr = QUuid::createUuid().toRfc4122();
     socket->setProperty("uuid",uuidArr);
 
-    qDebug()<<"Web: New connection."<<QUuid::fromRfc4122(uuidArr);
+    qDebug()<<"Web: New socket connected:"<<QUuid::fromRfc4122(uuidArr);
 
     connect(socket,SIGNAL(binaryMessageReceived(QByteArray)),this,SLOT(binData(QByteArray)));
     connect(socket,SIGNAL(textMessageReceived(QString)),this,SLOT(textData(QString)));
@@ -76,7 +76,7 @@ void ServerWeb::setSocketDisconnected()
 
     QByteArray uuidArr = socket->property("uuid").toByteArray();
 
-    qDebug()<<"Web: One disconnected"<<QUuid::fromRfc4122(uuidArr);
+    qDebug()<<"Web: One socket is disconnected:"<<QUuid::fromRfc4122(uuidArr);
 
     m_webClients.removeOne(socket);
     socket->deleteLater();

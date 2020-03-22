@@ -40,10 +40,10 @@ UnitingClass::UnitingClass(QObject *parent) : QObject(parent),
     connect(m_dataParser,SIGNAL(messageToSocket(QByteArray,QByteArray)),m_serverWeb,SLOT(sendData(QByteArray,QByteArray)));
 
     connect(m_dataParser,SIGNAL(startGraber()),m_graberClass,SLOT(startSending()));
-    connect(m_serverWeb,SIGNAL(disconnectedAll()),m_graberClass,SLOT(stopSending()));
+    connect(m_dataParser,SIGNAL(stopGraber()),m_graberClass,SLOT(stopSending()));
 
     connect(m_graberClass,SIGNAL(imageParameters(QSize,int)),m_dataParser,SLOT(sendImageParameters(QSize,int)));
-    connect(m_graberClass,SIGNAL(imageTile(quint16,quint16,QImage,quint16)),m_dataParser,SLOT(sendImageTile(quint16,quint16,QImage,quint16)));
+    connect(m_graberClass,SIGNAL(imageTile(quint16,quint16,QByteArray,quint16)),m_dataParser,SLOT(sendImageTile(quint16,quint16,QByteArray,quint16)));
     connect(m_graberClass,SIGNAL(screenPositionChanged(QPoint)),m_inputSimulator,SLOT(setScreenPosition(QPoint)));
 
     connect(m_dataParser,SIGNAL(setKeyPressed(quint16,bool)),m_inputSimulator,SLOT(simulateKeyboard(quint16,bool)));
