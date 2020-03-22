@@ -4,6 +4,7 @@
 #include <QNetworkInterface>
 #include <QSettings>
 #include <QDebug>
+#include <QUuid>
 
 UnitingClass::UnitingClass(QObject *parent) : QObject(parent),
     m_serverHttp(new ServerHttp(this)),
@@ -55,9 +56,9 @@ UnitingClass::UnitingClass(QObject *parent) : QObject(parent),
 
     m_graberClass->start();
 
-//    QString url = "ws://127.0.0.1:8765";
-//    m_socketWeb->setUrl(url);
-//    m_socketWeb->start();
+    QString url = "ws://127.0.0.1:8082";
+    m_socketWeb->setUrl(url);
+    m_socketWeb->start();
 }
 
 void UnitingClass::actionTriggered(QAction *action)
@@ -133,6 +134,20 @@ void UnitingClass::loadSettings()
     {
         pass = "pass";
         settings.setValue("pass",pass);
+    }
+
+    QString name = settings.value("name").toString();
+    if(name.isEmpty())
+    {
+        name = QUuid::createUuid().toString().mid(1,8);
+        settings.setValue("name",name);
+    }
+
+    QString remoteHost = settings.value("remoteHost").toString();
+    if(remoteHost.isEmpty())
+    {
+        remoteHost = "remoteHost";
+        settings.setValue("remoteHost",remoteHost);
     }
 
     settings.endGroup();
