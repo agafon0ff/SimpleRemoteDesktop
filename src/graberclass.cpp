@@ -150,8 +150,11 @@ bool GraberClass::isSendTilePermit()
     {
         ++m_permitCounter;
 
-        if(m_permitCounter > 10)
+        if(m_permitCounter > 20)
+        {
+            m_permitCounter = 0;
             result = true;
+        }
     }
 
     return result;

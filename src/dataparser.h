@@ -29,7 +29,6 @@ private:
     QString m_login;
     QString m_pass;
     QByteArray m_dataTmp;
-    QTimer *m_timerClearTmp;
 
     QMap<QByteArray,SocketStruct> m_socketsMap;
 
@@ -62,10 +61,10 @@ private slots:
     bool isSocketAuthenticated(const QByteArray &uuid);
 
     void debugHexData(const QByteArray &data);
-    void timerClearTmpTick();
 
-    QByteArray arrayFromUint16(quint16 number);
-    quint16 uint16FromArray(const QByteArray &buf);
+public:
+    static QByteArray arrayFromUint16(quint16 number);
+    static quint16 uint16FromArray(const QByteArray &buf);
 };
 
 #endif // DATAPARSER_H

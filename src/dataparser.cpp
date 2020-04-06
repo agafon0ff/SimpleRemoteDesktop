@@ -20,10 +20,9 @@ static const QByteArray KEY_SET_AUTH_RESPONSE = "SARP";
 const int COMMAD_SIZE = 4;
 const int REQUEST_MIN_SIZE = 6;
 
-DataParser::DataParser(QObject *parent) : QObject(parent),
-    m_timerClearTmp(new QTimer(this))
+DataParser::DataParser(QObject *parent) : QObject(parent)
 {
-    connect(m_timerClearTmp,SIGNAL(timeout()),this,SLOT(timerClearTmpTick()));
+
 }
 
 void DataParser::setLoginPass(const QString &login, const QString &pass)
@@ -108,7 +107,6 @@ void DataParser::setData(const QByteArray &uuid, const QByteArray &data)
             if(m_dataTmp.size() > 2000)
                 m_dataTmp.clear();
 
-            m_timerClearTmp->start(2000);
             break;
         }
     }
@@ -277,12 +275,6 @@ void DataParser::debugHexData(const QByteArray &data)
     }
 
     qDebug()<<"DataParser::debugHexData:"<<textHex<<data;
-}
-
-void DataParser::timerClearTmpTick()
-{
-    m_dataTmp.clear();
-    m_timerClearTmp->stop();
 }
 
 QByteArray DataParser::arrayFromUint16(quint16 number)
