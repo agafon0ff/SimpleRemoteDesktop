@@ -1,7 +1,8 @@
 #include "proxyunitingclass.h"
-#include <QSettings>
-#include <QDebug>
 #include <QCoreApplication>
+#include <QSettings>
+#include <QThread>
+#include <QDebug>
 
 int main(int argc, char *argv[])
 {
@@ -12,12 +13,12 @@ int main(int argc, char *argv[])
 
 ProxyUnitingClass::ProxyUnitingClass(QObject *parent) : QObject(parent),
     m_serverHttp(new ServerHttp(this)),
-    m_serverWebClients(new ServerWeb(this)),
-    m_serverWebDesktops(new ServerWeb(this)),
-    m_dataParser(new DataParser(this))
+    m_clientsSocketTransfer(Q_NULLPTR),
+    m_desktopSocketTransfer(Q_NULLPTR)
 {
     qDebug()<<"Create(ProxyUnitingClass)";
     loadSettings();
+    qDebug()<<this<<thread();
 }
 
 void ProxyUnitingClass::loadSettings()
@@ -70,11 +71,44 @@ void ProxyUnitingClass::loadSettings()
     settings.endGroup();
     settings.sync();
 
-    m_serverHttp->setPort(static_cast<quint16>(portHttp));
+    startHttpServer(portHttp,filesPath);
+    startClientsWebSocketTransfer(portWebClient,login,pass);
+    startDesktopWebSocketTransfer(portWebDesktop,login,pass);
+}
+
+void ProxyUnitingClass::startHttpServer(quint16 port, const QString &filesPath)
+{
+    m_serverHttp->setPort(static_cast<quint16>(port));
     m_serverHttp->setPath(filesPath);
+    m_serverHttp->start();
+}
 
-    if(m_serverHttp->start())
-        m_serverWebClients->initServer(static_cast<quint16>(portWebClient));
+void ProxyUnitingClass::startClientsWebSocketTransfer(quint16 port, const QString &login, const QString &pass)
+{
+    m_clientsSocketTransfer = new WebSocketTransfer;
+    m_clientsSocketTransfer->setPort(port);
+    m_clientsSocketTransfer->setLoginPass(login, pass);
+    moveWebSocketTransferToThread(m_clientsSocketTransfer);
+}
 
-    m_serverWebDesktops->initServer(static_cast<quint16>(portWebDesktop));
+void ProxyUnitingClass::startDesktopWebSocketTransfer(quint16 port, const QString &login, const QString &pass)
+{
+    m_desktopSocketTransfer = new WebSocketTransfer;
+    m_desktopSocketTransfer->setPort(port);
+    m_desktopSocketTransfer->setLoginPass(login, pass);
+    moveWebSocketTransferToThread(m_desktopSocketTransfer);
+}
+
+void ProxyUnitingClass::moveWebSocketTransferToThread(WebSocketTransfer *webSocketTransfer)
+{
+    QThread *thread = new QThread;
+
+    connect(thread, &QThread::started, webSocketTransfer, &WebSocketTransfer::start);
+//    connect(webSocketTransfer, &WebSocketTransfer::finished, this, &RemoteDesktopUniting::finishedWebSocketransfer);
+    connect(webSocketTransfer, &WebSocketTransfer::finished, thread, &QThread::quit);
+    connect(thread, &QThread::finished, webSocketTransfer, &WebSocketTransfer::deleteLater);
+    connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+
+    webSocketTransfer->moveToThread(thread);
+    thread->start();
 }

@@ -9,14 +9,14 @@ INCLUDEPATH += src
 SOURCES += \
     src/proxyunitingclass.cpp \
     src/serverhttp.cpp \
-    src/serverweb.cpp \
-    src/dataparser.cpp
+    src/websockethandler.cpp \
+    src/websockettransfer.cpp
 
 HEADERS += \
     src/proxyunitingclass.h \
     src/serverhttp.h \
-    src/serverweb.h \
-    src/dataparser.h
+    src/websockethandler.h \
+    src/websockettransfer.h
 
 RESOURCES += \
     src/res.qrc

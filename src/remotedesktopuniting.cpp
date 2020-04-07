@@ -1,12 +1,10 @@
 #include "remotedesktopuniting.h"
+#include <QNetworkInterface>
 #include <QApplication>
 #include <QCommonStyle>
-#include <QNetworkInterface>
 #include <QSettings>
-#include <QDebug>
-#include <QUuid>
-#include <QApplication>
 #include <QThread>
+#include <QDebug>
 
 int main(int argc, char *argv[])
 {

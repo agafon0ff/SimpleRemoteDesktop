@@ -20,6 +20,8 @@ void WebSocketTransfer::start()
         connect(m_webSocketServer,&QWebSocketServer::newConnection,this,&WebSocketTransfer::setSocketConnected);
     }
     else qDebug()<<"ERROR: Web-Server is not started on port:"<<m_port;
+
+    qDebug()<<this<<thread();
 }
 
 void WebSocketTransfer::stop()

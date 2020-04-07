@@ -3,8 +3,7 @@
 
 #include <QObject>
 #include "serverhttp.h"
-#include "serverweb.h"
-#include "dataparser.h"
+#include "websockettransfer.h"
 
 class ProxyUnitingClass : public QObject
 {
@@ -15,13 +14,15 @@ public:
 private:
 
     ServerHttp *m_serverHttp;
-    ServerWeb *m_serverWebClients;
-    ServerWeb *m_serverWebDesktops;
-    DataParser *m_dataParser;
+    WebSocketTransfer *m_clientsSocketTransfer;
+    WebSocketTransfer *m_desktopSocketTransfer;
 
 private slots:
     void loadSettings();
-
+    void startHttpServer(quint16 port, const QString &filesPath);
+    void startClientsWebSocketTransfer(quint16 port, const QString &login, const QString &pass);
+    void startDesktopWebSocketTransfer(quint16 port, const QString &login, const QString &pass);
+    void moveWebSocketTransferToThread(WebSocketTransfer *webSocketTransfer);
 };
 
 #endif // PROXYUNITINGCLASS_H
