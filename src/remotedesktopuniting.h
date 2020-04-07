@@ -1,5 +1,5 @@
-#ifndef UNITINGCLASS_H
-#define UNITINGCLASS_H
+#ifndef REMOTEDESKTOPUNITING_H
+#define REMOTEDESKTOPUNITING_H
 
 #include <QObject>
 #include <QWidget>
@@ -8,27 +8,22 @@
 #include <QAction>
 
 #include "serverhttp.h"
-#include "serverweb.h"
-#include "socketweb.h"
-#include "dataparser.h"
+#include "websockettransfer.h"
 #include "graberclass.h"
 #include "inputsimulator.h"
 
-class UnitingClass : public QObject
+class RemoteDesktopUniting : public QObject
 {
     Q_OBJECT
 public:
-    explicit UnitingClass(QObject *parent = Q_NULLPTR);
+    explicit RemoteDesktopUniting(QObject *parent = Q_NULLPTR);
 
 private:
 
+    WebSocketTransfer *m_webSocketTransfer;
     ServerHttp *m_serverHttp;
-    ServerWeb *m_serverWeb;
-    SocketWeb *m_socketWeb;
-    DataParser *m_dataParser;
     GraberClass *m_graberClass;
     InputSimulator *m_inputSimulator;
-
     QMenu *m_trayMenu;
     QSystemTrayIcon *m_trayIcon;
 
@@ -36,6 +31,7 @@ private:
     int m_currentPort;
 
 signals:
+    void closeSignal();
 
 public slots:
 
@@ -44,6 +40,10 @@ private slots:
     void showInfoMessage();
     void updateCurrentIp();
     void loadSettings();
+    void startHttpServer(quint16 port, const QString &filesPath);
+    void startWebSocketTransfer(quint16 port, const QString &login, const QString &pass);
+    void createConnectionToHandler(WebSocketHandler *webSocketHandler);
+    void finishedWebSocketransfer();
 };
 
-#endif // UNITINGCLASS_H
+#endif // REMOTEDESKTOPUNITING_H

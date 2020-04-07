@@ -14,23 +14,20 @@ CONFIG += c++11
 INCLUDEPATH += src
 
 SOURCES += \
-    src/main.cpp \
     src/serverhttp.cpp \
-    src/serverweb.cpp \
-    src/unitingclass.cpp \
     src/graberclass.cpp \
-    src/dataparser.cpp \
     src/inputsimulator.cpp \
-    src/socketweb.cpp
+    src/websockettransfer.cpp \
+    src/remotedesktopuniting.cpp \
+    src/websockethandler.cpp
 
 HEADERS += \
     src/serverhttp.h \
-    src/serverweb.h \
-    src/unitingclass.h \
     src/graberclass.h \
-    src/dataparser.h \
     src/inputsimulator.h \
-    src/socketweb.h
+    src/websockettransfer.h \
+    src/remotedesktopuniting.h \
+    src/websockethandler.h
 
 RESOURCES += \
     src/res.qrc
