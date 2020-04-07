@@ -18,7 +18,6 @@ private:
 
     QWebSocketServer *m_webSocketServer;
     QList<QWebSocket*> m_webClients;
-    QByteArray m_dataTmp;
 
 signals:
     void socketConnected(const QByteArray &uuid);
