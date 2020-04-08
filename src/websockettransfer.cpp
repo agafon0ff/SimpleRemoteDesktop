@@ -2,6 +2,7 @@
 
 WebSocketTransfer::WebSocketTransfer(QObject *parent) : QObject(parent),
     m_webSocketServer(Q_NULLPTR),
+    m_type(TransferWebClients),
     m_port(8081)
 {
 
@@ -20,8 +21,6 @@ void WebSocketTransfer::start()
         connect(m_webSocketServer,&QWebSocketServer::newConnection,this,&WebSocketTransfer::setSocketConnected);
     }
     else qDebug()<<"ERROR: Web-Server is not started on port:"<<m_port;
-
-    qDebug()<<this<<thread();
 }
 
 void WebSocketTransfer::stop()
@@ -46,12 +45,25 @@ void WebSocketTransfer::setLoginPass(const QString &login, const QString &pass)
     m_pass = pass;
 }
 
+void WebSocketTransfer::setType(int type)
+{
+    m_type = type;
+}
+
 void WebSocketTransfer::setSocketConnected()
 {
     QWebSocket *webSocket = m_webSocketServer->nextPendingConnection();
 
     WebSocketHandler *socketHandler = new WebSocketHandler(this);
     connect(socketHandler, &WebSocketHandler::disconnected, this, &WebSocketTransfer::socketDisconnected);
+
+    if(m_type == TransferDesktops)
+        socketHandler->setType(WebSocketHandler::HandlerDesktop);
+    else if(m_type == TransferWebClients)
+        socketHandler->setType(WebSocketHandler::HandlerWebClient);
+    else if(m_type == TransferProxyClients)
+        socketHandler->setType(WebSocketHandler::HandlerProxyClient);
+
     socketHandler->setLoginPass(m_login, m_pass);
     socketHandler->setSocket(webSocket);
     m_sockets.append(socketHandler);
@@ -73,6 +85,8 @@ void WebSocketTransfer::socketDisconnected(WebSocketHandler *pointer)
 
     if(pointer)
     {
+        qDebug()<<"Disconnected one:"<<pointer->getName();
+
         pointer->disconnect();
         pointer->deleteLater();
     }

@@ -14,16 +14,26 @@ class WebSocketHandler : public QObject
 public:
     explicit WebSocketHandler(QObject *parent = Q_NULLPTR);
 
+    enum HandlerType
+    {
+        HandlerWebClient,
+        HandlerProxyClient,
+        HandlerDesktop,
+        HandlerSingleClient
+    };
+
 private:
     QWebSocket *m_webSocket;
     QTimer *m_timerReconnect;
+    int m_type;
+    bool m_isAuthenticated;
     QString m_url;
+    QString m_name;
     QString m_login;
     QString m_pass;
     QByteArray m_dataTmp;
     QByteArray m_uuid;
     QByteArray m_nonce;
-    bool m_isAuthenticated;
 
 signals:
     void finished();
@@ -36,20 +46,29 @@ signals:
     void setMouseMove(quint16 posX, quint16 posY);
     void setMouseDelta(qint16 deltaX, qint16 deltaY);
     void disconnected(WebSocketHandler *pointer);
+    void findAuthentication(const QByteArray &nonce, const QByteArray &request);
 
 public slots:
-    void crateSocket();
+    void createSocket();
     void removeSocket();
     void setUrl(const QString &url);
+    void setType(int type);
+
+    void setName(const QString &name);
+    QString getName();
+
     void setLoginPass(const QString &login, const QString &pass);
     void setSocket(QWebSocket *webSocket);
     void sendImageParameters(const QSize &imageSize, int rectWidth);
     void sendImageTile(quint16 posX, quint16 posY,
                        const QByteArray &imageData, quint16 tileNum);
+    void sendName(const QString &name);
 
 private slots:
     void newData(const QByteArray &command, const QByteArray &data);
     void checkAuthentication(const QByteArray &request);
+    void sendAuthenticationRequest();
+    QByteArray getHashSum();
     void socketStateChanged(QAbstractSocket::SocketState state);
     void socketDisconnected();
     void sendBinaryMessage(const QByteArray &data);

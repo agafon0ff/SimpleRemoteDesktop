@@ -17,18 +17,21 @@ static const QByteArray KEY_TILE_RECEIVED = "TLRD";
 static const QByteArray KEY_SET_NONCE = "STNC";
 static const QByteArray KEY_SET_AUTH_REQUEST = "SARQ";
 static const QByteArray KEY_SET_AUTH_RESPONSE = "SARP";
+static const QByteArray KEY_SET_NAME = "STNM";
 
 const int COMMAD_SIZE = 4;
 const int REQUEST_MIN_SIZE = 6;
 
 WebSocketHandler::WebSocketHandler(QObject *parent) : QObject(parent),
     m_webSocket(Q_NULLPTR),
+    m_timerReconnect(Q_NULLPTR),
+    m_type(HandlerWebClient),
     m_isAuthenticated(false)
 {
 
 }
 
-void WebSocketHandler::crateSocket()
+void WebSocketHandler::createSocket()
 {
     if(m_webSocket)
         return;
@@ -72,6 +75,21 @@ void WebSocketHandler::setUrl(const QString &url)
 {
     m_url = url;
     qDebug()<<"SocketWeb::setUrl"<<url<<QUrl(url).isValid();
+}
+
+void WebSocketHandler::setType(int type)
+{
+    m_type = type;
+}
+
+void WebSocketHandler::setName(const QString &name)
+{
+    m_name = name;
+}
+
+QString WebSocketHandler::getName()
+{
+    return m_name;
 }
 
 void WebSocketHandler::setLoginPass(const QString &login, const QString &pass)
@@ -132,19 +150,63 @@ void WebSocketHandler::sendImageTile(quint16 posX, quint16 posY, const QByteArra
     sendBinaryMessage(data);
 }
 
+void WebSocketHandler::sendName(const QString &name)
+{
+    if(!m_isAuthenticated)
+        return;
+
+    QByteArray nameArray = name.toUtf8();
+    QByteArray data;
+    data.append(KEY_SET_NAME);
+    data.append(arrayFromUint16(static_cast<quint16>(nameArray.size())));
+    data.append(nameArray);
+
+    sendBinaryMessage(data);
+}
+
 void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data)
 {
-//    qDebug()<<"DataParser::newData"<<command<<data;
+    qDebug()<<"DataParser::newData"<<command<<data;
 
-    if(command == KEY_SET_AUTH_REQUEST)
+    if(!m_isAuthenticated)
     {
-        checkAuthentication(data);
-        return;
-    }
-    else
-    {
-        if(!m_isAuthenticated)
+        if(command == KEY_SET_AUTH_REQUEST)
+        {
+            if(m_type == HandlerWebClient || m_type == HandlerDesktop)
+                checkAuthentication(data);
+            else if(m_type == HandlerProxyClient)
+            {
+                qDebug()<<"find Authentication:"<<m_uuid<<m_nonce<<data.toBase64();
+                emit findAuthentication(m_nonce, data);
+            }
+
             return;
+        }
+        else if(command == KEY_SET_NONCE)
+        {
+            if(m_type == HandlerSingleClient)
+            {
+                m_nonce = data;
+                sendAuthenticationRequest();
+            }
+
+            return;
+        }
+        else if(command == KEY_SET_AUTH_RESPONSE)
+        {
+            bool authState = uint16FromArray(data);
+
+            if(m_type == HandlerSingleClient && authState)
+            {
+                m_isAuthenticated = true;
+                sendName(m_name);
+            }
+            else m_isAuthenticated = false;
+
+            return;
+        }
+
+        return;
     }
 
     if(command == KEY_GET_IMAGE)
@@ -204,6 +266,11 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
             emit setWheelChanged(static_cast<bool>(keyState));
         }
     }
+    else if(command == KEY_SET_NAME)
+    {
+        m_name = QString::fromUtf8(data);
+        qDebug()<<"New client:"<<m_name;
+    }
     else
     {
         qDebug()<<"DataParser::newData"<<command<<data;
@@ -213,13 +280,8 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
 
 void WebSocketHandler::checkAuthentication(const QByteArray &request)
 {
-    QString sum = m_login + m_pass;
-    QByteArray concatFirst = QCryptographicHash::hash(sum.toUtf8(),QCryptographicHash::Md5).toBase64();
-    concatFirst.append(m_nonce.toBase64());
-    QByteArray concatSecond = QCryptographicHash::hash(concatFirst,QCryptographicHash::Md5).toBase64();
     bool isAuthenticated = false;
-
-    if(request.toBase64() == concatSecond)
+    if(request.toBase64() == getHashSum())
     {
         if(!m_isAuthenticated)
             m_isAuthenticated = true;
@@ -238,6 +300,25 @@ void WebSocketHandler::checkAuthentication(const QByteArray &request)
     sendBinaryMessage(data);
 }
 
+void WebSocketHandler::sendAuthenticationRequest()
+{
+    QByteArray hashSum = QByteArray::fromBase64(getHashSum());
+    QByteArray data;
+    data.append(KEY_SET_AUTH_REQUEST);
+    data.append(arrayFromUint16(static_cast<quint16>(hashSum.size())));
+    data.append(hashSum);
+    sendBinaryMessage(data);
+}
+
+QByteArray WebSocketHandler::getHashSum()
+{
+    QString sum = m_login + m_pass;
+    QByteArray concatFirst = QCryptographicHash::hash(sum.toUtf8(),QCryptographicHash::Md5).toBase64();
+    concatFirst.append(m_nonce.toBase64());
+    QByteArray result = QCryptographicHash::hash(concatFirst,QCryptographicHash::Md5).toBase64();
+    return result;
+}
+
 void WebSocketHandler::socketStateChanged(QAbstractSocket::SocketState state)
 {
     switch(state)
@@ -245,7 +326,7 @@ void WebSocketHandler::socketStateChanged(QAbstractSocket::SocketState state)
         case QAbstractSocket::UnconnectedState:
         {
             if(m_timerReconnect)
-                if(m_timerReconnect->isActive())
+                if(!m_timerReconnect->isActive())
                     m_timerReconnect->start(1000);
             break;
         }
@@ -256,7 +337,7 @@ void WebSocketHandler::socketStateChanged(QAbstractSocket::SocketState state)
         case QAbstractSocket::ConnectingState:
         {
             if(m_timerReconnect)
-                if(m_timerReconnect->isActive())
+                if(!m_timerReconnect->isActive())
                     m_timerReconnect->start(1000);
             break;
         }
@@ -268,6 +349,13 @@ void WebSocketHandler::socketStateChanged(QAbstractSocket::SocketState state)
         case QAbstractSocket::ClosingState:
         {
             qDebug()<<"SocketWeb::socketStateChanged: Disconnected from server.";
+
+            m_isAuthenticated = false;
+
+            if(m_timerReconnect)
+                if(!m_timerReconnect->isActive())
+                    m_timerReconnect->start(1000);
+
             break;
         }
         default:

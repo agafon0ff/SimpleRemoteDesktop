@@ -13,8 +13,16 @@ class WebSocketTransfer : public QObject
 public:
     explicit WebSocketTransfer(QObject *parent = Q_NULLPTR);
 
+    enum TransferType
+    {
+        TransferDesktops,
+        TransferWebClients,
+        TransferProxyClients
+    };
+
 private:
     QWebSocketServer *m_webSocketServer;
+    int m_type;
     quint16 m_port;
     QString m_login;
     QString m_pass;
@@ -31,6 +39,7 @@ public slots:
     void stop();
     void setPort(quint16 port);
     void setLoginPass(const QString &login, const QString &pass);
+    void setType(int type);
 
 private slots:
     void setSocketConnected();

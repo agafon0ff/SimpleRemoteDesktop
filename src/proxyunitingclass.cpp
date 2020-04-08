@@ -18,7 +18,6 @@ ProxyUnitingClass::ProxyUnitingClass(QObject *parent) : QObject(parent),
 {
     qDebug()<<"Create(ProxyUnitingClass)";
     loadSettings();
-    qDebug()<<this<<thread();
 }
 
 void ProxyUnitingClass::loadSettings()
@@ -86,6 +85,7 @@ void ProxyUnitingClass::startHttpServer(quint16 port, const QString &filesPath)
 void ProxyUnitingClass::startClientsWebSocketTransfer(quint16 port, const QString &login, const QString &pass)
 {
     m_clientsSocketTransfer = new WebSocketTransfer;
+    m_clientsSocketTransfer->setType(WebSocketTransfer::TransferProxyClients);
     m_clientsSocketTransfer->setPort(port);
     m_clientsSocketTransfer->setLoginPass(login, pass);
     moveWebSocketTransferToThread(m_clientsSocketTransfer);
@@ -94,6 +94,7 @@ void ProxyUnitingClass::startClientsWebSocketTransfer(quint16 port, const QStrin
 void ProxyUnitingClass::startDesktopWebSocketTransfer(quint16 port, const QString &login, const QString &pass)
 {
     m_desktopSocketTransfer = new WebSocketTransfer;
+    m_desktopSocketTransfer->setType(WebSocketTransfer::TransferDesktops);
     m_desktopSocketTransfer->setPort(port);
     m_desktopSocketTransfer->setLoginPass(login, pass);
     moveWebSocketTransferToThread(m_desktopSocketTransfer);

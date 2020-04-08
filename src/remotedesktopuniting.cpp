@@ -5,6 +5,7 @@
 #include <QSettings>
 #include <QThread>
 #include <QDebug>
+#include <QUuid>
 
 int main(int argc, char *argv[])
 {
@@ -15,6 +16,7 @@ int main(int argc, char *argv[])
 
 RemoteDesktopUniting::RemoteDesktopUniting(QObject *parent) : QObject(parent),
     m_webSocketTransfer(Q_NULLPTR),
+    m_webSocketHandler(Q_NULLPTR),
     m_serverHttp(new ServerHttp(this)),
     m_graberClass(new GraberClass(this)),
     m_inputSimulator(new InputSimulator(this)),
@@ -122,11 +124,25 @@ void RemoteDesktopUniting::loadSettings()
         settings.setValue("name",name);
     }
 
-    QString remoteHost = settings.value("remoteHost").toString();
-    if(remoteHost.isEmpty())
+    QString proxyHost = settings.value("proxyHost").toString();
+    if(proxyHost.isEmpty())
     {
-        remoteHost = "remoteHost";
-        settings.setValue("remoteHost",remoteHost);
+        proxyHost = "ws://127.0.0.1:8082";
+        settings.setValue("proxyHost",proxyHost);
+    }
+
+    QString proxyLogin = settings.value("proxyLogin").toString();
+    if(proxyLogin.isEmpty())
+    {
+        proxyLogin = "plogin";
+        settings.setValue("proxyLogin",proxyLogin);
+    }
+
+    QString proxyPass = settings.value("proxyPass").toString();
+    if(proxyPass.isEmpty())
+    {
+        proxyPass = "ppass";
+        settings.setValue("proxyPass",proxyPass);
     }
 
     settings.endGroup();
@@ -134,6 +150,7 @@ void RemoteDesktopUniting::loadSettings()
 
     startHttpServer(portHttp,filesPath);
     startWebSocketTransfer(portWeb,login,pass);
+    startWebSocketHandler(proxyHost,name,proxyLogin,proxyPass);
 }
 
 void RemoteDesktopUniting::startHttpServer(quint16 port, const QString &filesPath)
@@ -157,20 +174,41 @@ void RemoteDesktopUniting::startWebSocketTransfer(quint16 port, const QString &l
 {
     QThread *thread = new QThread;
     m_webSocketTransfer = new WebSocketTransfer;
-
+    m_webSocketTransfer->setType(WebSocketTransfer::TransferWebClients);
     m_webSocketTransfer->setPort(port);
     m_webSocketTransfer->setLoginPass(login, pass);
 
     connect(thread, &QThread::started, m_webSocketTransfer, &WebSocketTransfer::start);
     connect(this, &RemoteDesktopUniting::closeSignal, m_webSocketTransfer, &WebSocketTransfer::stop);
-    connect(m_webSocketTransfer, &WebSocketTransfer::finished, this, &RemoteDesktopUniting::finishedWebSocketransfer);
+    connect(m_webSocketTransfer, &WebSocketTransfer::finished, this, &RemoteDesktopUniting::finishedWebSockeTransfer);
     connect(m_webSocketTransfer, &WebSocketTransfer::finished, thread, &QThread::quit);
     connect(thread, &QThread::finished, m_webSocketTransfer, &WebSocketTransfer::deleteLater);
     connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+
     connect(m_webSocketTransfer, &WebSocketTransfer::newSocketConnected, this, &RemoteDesktopUniting::createConnectionToHandler);
     connect(m_webSocketTransfer, &WebSocketTransfer::disconnectedAll, m_graberClass, &GraberClass::stopSending);
 
     m_webSocketTransfer->moveToThread(thread);
+    thread->start();
+}
+
+void RemoteDesktopUniting::startWebSocketHandler(const QString &host, const QString &name, const QString &login, const QString &pass)
+{
+    QThread *thread = new QThread;
+    m_webSocketHandler = new WebSocketHandler;
+    m_webSocketHandler->setType(WebSocketHandler::HandlerSingleClient);
+    m_webSocketHandler->setUrl(host);
+    m_webSocketHandler->setName(name);
+    m_webSocketHandler->setLoginPass(login, pass);
+
+    connect(thread, &QThread::started, m_webSocketHandler, &WebSocketHandler::createSocket);
+    connect(this, &RemoteDesktopUniting::closeSignal, m_webSocketHandler, &WebSocketHandler::removeSocket);
+    connect(m_webSocketHandler, &WebSocketHandler::finished, this, &RemoteDesktopUniting::finishedWebSockeHandler);
+    connect(m_webSocketHandler, &WebSocketHandler::finished, thread, &QThread::quit);
+    connect(thread, &QThread::finished, m_webSocketHandler, &WebSocketHandler::deleteLater);
+    connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+
+    m_webSocketHandler->moveToThread(thread);
     thread->start();
 }
 
@@ -191,7 +229,18 @@ void RemoteDesktopUniting::createConnectionToHandler(WebSocketHandler *webSocket
     connect(webSocketHandler, &WebSocketHandler::setMouseDelta, m_inputSimulator, &InputSimulator::setMouseDelta);
 }
 
-void RemoteDesktopUniting::finishedWebSocketransfer()
+void RemoteDesktopUniting::finishedWebSockeTransfer()
 {
-    QApplication::quit();
+    m_webSocketTransfer = Q_NULLPTR;
+
+    if(!m_webSocketHandler)
+        QApplication::quit();
+}
+
+void RemoteDesktopUniting::finishedWebSockeHandler()
+{
+    m_webSocketHandler = Q_NULLPTR;
+
+    if(!m_webSocketTransfer)
+        QApplication::quit();
 }

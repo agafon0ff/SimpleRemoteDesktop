@@ -21,6 +21,7 @@ public:
 private:
 
     WebSocketTransfer *m_webSocketTransfer;
+    WebSocketHandler *m_webSocketHandler;
     ServerHttp *m_serverHttp;
     GraberClass *m_graberClass;
     InputSimulator *m_inputSimulator;
@@ -42,8 +43,10 @@ private slots:
     void loadSettings();
     void startHttpServer(quint16 port, const QString &filesPath);
     void startWebSocketTransfer(quint16 port, const QString &login, const QString &pass);
+    void startWebSocketHandler(const QString &host, const QString &name, const QString &login, const QString &pass);
     void createConnectionToHandler(WebSocketHandler *webSocketHandler);
-    void finishedWebSocketransfer();
+    void finishedWebSockeTransfer();
+    void finishedWebSockeHandler();
 };
 
 #endif // REMOTEDESKTOPUNITING_H
