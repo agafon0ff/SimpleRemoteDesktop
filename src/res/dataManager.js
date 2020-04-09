@@ -14,6 +14,7 @@ var KEY_IMAGE_PARAM = "73,77,71,80";//new Uint8Array([73,77,71,80]); //ascii: "I
 var KEY_IMAGE_TILE = "73,77,71,84";//IMGT
 var KEY_SET_NONCE = "83,84,78,67";//STNC
 var KEY_SET_AUTH_RESPONSE = "83,65,82,80"; //SARP;
+var KEY_CHECK_AUTH_RESPONSE = "67,65,82,80"; //CARP;
 
 var PNG_HEADER = new Uint8Array([137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82]);
 
@@ -180,6 +181,14 @@ class DataManager
             
             if(this.displayField)
                 this.displayField.setImageData(posX, posY, b64encoded, tileNum);
+        }
+        else if(command === KEY_CHECK_AUTH_RESPONSE)
+        {
+            var uuid = data.subarray(0,16);
+            var name = data.subarray(16,data.length);
+            var nameString = String.fromCharCode.apply(null, name)
+
+            console.log("KEY_CHECK_AUTH_RESPONSE:",nameString);
         }
         else console.log("newData:",command.toString(),command,data);
     }

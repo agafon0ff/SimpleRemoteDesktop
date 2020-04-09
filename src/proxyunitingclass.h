@@ -23,6 +23,8 @@ private slots:
     void startClientsWebSocketTransfer(quint16 port, const QString &login, const QString &pass);
     void startDesktopWebSocketTransfer(quint16 port, const QString &login, const QString &pass);
     void moveWebSocketTransferToThread(WebSocketTransfer *webSocketTransfer);
+    void createClientWebSocketConnection(WebSocketHandler *webSocket);
+    void createDesktopWebSocketConnection(WebSocketHandler *webSocket);
 };
 
 #endif // PROXYUNITINGCLASS_H

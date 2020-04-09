@@ -88,6 +88,10 @@ void ProxyUnitingClass::startClientsWebSocketTransfer(quint16 port, const QStrin
     m_clientsSocketTransfer->setType(WebSocketTransfer::TransferProxyClients);
     m_clientsSocketTransfer->setPort(port);
     m_clientsSocketTransfer->setLoginPass(login, pass);
+
+    connect(m_clientsSocketTransfer, &WebSocketTransfer::newSocketConnected,
+            this, &ProxyUnitingClass::createClientWebSocketConnection);
+
     moveWebSocketTransferToThread(m_clientsSocketTransfer);
 }
 
@@ -97,6 +101,10 @@ void ProxyUnitingClass::startDesktopWebSocketTransfer(quint16 port, const QStrin
     m_desktopSocketTransfer->setType(WebSocketTransfer::TransferDesktops);
     m_desktopSocketTransfer->setPort(port);
     m_desktopSocketTransfer->setLoginPass(login, pass);
+
+    connect(m_desktopSocketTransfer, &WebSocketTransfer::newSocketConnected,
+            this, &ProxyUnitingClass::createDesktopWebSocketConnection);
+
     moveWebSocketTransferToThread(m_desktopSocketTransfer);
 }
 
@@ -105,11 +113,28 @@ void ProxyUnitingClass::moveWebSocketTransferToThread(WebSocketTransfer *webSock
     QThread *thread = new QThread;
 
     connect(thread, &QThread::started, webSocketTransfer, &WebSocketTransfer::start);
-//    connect(webSocketTransfer, &WebSocketTransfer::finished, this, &RemoteDesktopUniting::finishedWebSocketransfer);
     connect(webSocketTransfer, &WebSocketTransfer::finished, thread, &QThread::quit);
     connect(thread, &QThread::finished, webSocketTransfer, &WebSocketTransfer::deleteLater);
     connect(thread, &QThread::finished, thread, &QThread::deleteLater);
 
     webSocketTransfer->moveToThread(thread);
     thread->start();
+}
+
+void ProxyUnitingClass::createClientWebSocketConnection(WebSocketHandler *webSocket)
+{
+    if(!webSocket)
+        return;
+
+    connect(webSocket, &WebSocketHandler::remoteAuthenticationRequest,
+            m_desktopSocketTransfer, &WebSocketTransfer::checkRemoteAuthentication);
+}
+
+void ProxyUnitingClass::createDesktopWebSocketConnection(WebSocketHandler *webSocket)
+{
+    if(!webSocket)
+        return;
+
+    connect(webSocket, &WebSocketHandler::remoteAuthenticationResponse,
+            m_clientsSocketTransfer, &WebSocketTransfer::setRemoteAuthenticationResponse);
 }

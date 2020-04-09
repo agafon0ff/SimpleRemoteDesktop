@@ -40,6 +40,8 @@ public slots:
     void setPort(quint16 port);
     void setLoginPass(const QString &login, const QString &pass);
     void setType(int type);
+    void checkRemoteAuthentication(const QByteArray &uuid, const QByteArray &nonce, const QByteArray &request);
+    void setRemoteAuthenticationResponse(const QByteArray &uuidDst, const QByteArray &uuidSrc, const QByteArray &nameSrc);
 
 private slots:
     void setSocketConnected();

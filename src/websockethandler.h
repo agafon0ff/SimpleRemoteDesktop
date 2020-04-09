@@ -29,8 +29,13 @@ private:
     bool m_isAuthenticated;
     QString m_url;
     QString m_name;
+
     QString m_login;
     QString m_pass;
+
+    QString m_proxyLogin;
+    QString m_proxyPass;
+
     QByteArray m_dataTmp;
     QByteArray m_uuid;
     QByteArray m_nonce;
@@ -46,7 +51,9 @@ signals:
     void setMouseMove(quint16 posX, quint16 posY);
     void setMouseDelta(qint16 deltaX, qint16 deltaY);
     void disconnected(WebSocketHandler *pointer);
-    void findAuthentication(const QByteArray &nonce, const QByteArray &request);
+    void remoteAuthenticationRequest(const QByteArray &uuid, const QByteArray &nonce, const QByteArray &request);
+    void remoteAuthenticationResponse(const QByteArray &uuidDst, const QByteArray &uuidSrc,
+                                      const QByteArray &name, bool state);
 
 public slots:
     void createSocket();
@@ -57,18 +64,25 @@ public slots:
     void setName(const QString &name);
     QString getName();
 
+    QByteArray getUuid();
+
     void setLoginPass(const QString &login, const QString &pass);
+    void setProxyLoginPass(const QString &login, const QString &pass);
+
     void setSocket(QWebSocket *webSocket);
     void sendImageParameters(const QSize &imageSize, int rectWidth);
     void sendImageTile(quint16 posX, quint16 posY,
                        const QByteArray &imageData, quint16 tileNum);
     void sendName(const QString &name);
+    void checkRemoteAuthentication(const QByteArray &uuid, const QByteArray &nonce, const QByteArray &request);
+    void setRemoteAuthenticationResponse(const QByteArray &uuid, const QByteArray &name);
 
 private slots:
     void newData(const QByteArray &command, const QByteArray &data);
-    void checkAuthentication(const QByteArray &request);
-    void sendAuthenticationRequest();
-    QByteArray getHashSum();
+    void sendAuthenticationRequestToProxy();
+    void sendAuthenticationResponse(bool state);
+    void sendRemoteAuthenticationResponse(const QByteArray &uuid, const QByteArray &nonce, const QByteArray &request);
+    QByteArray getHashSum(const QByteArray &nonce, const QString &login, const QString &pass);
     void socketStateChanged(QAbstractSocket::SocketState state);
     void socketDisconnected();
     void sendBinaryMessage(const QByteArray &data);

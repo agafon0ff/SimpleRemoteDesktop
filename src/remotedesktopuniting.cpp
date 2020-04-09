@@ -150,7 +150,7 @@ void RemoteDesktopUniting::loadSettings()
 
     startHttpServer(portHttp,filesPath);
     startWebSocketTransfer(portWeb,login,pass);
-    startWebSocketHandler(proxyHost,name,proxyLogin,proxyPass);
+    startWebSocketHandler(proxyHost,name,login,pass,proxyLogin,proxyPass);
 }
 
 void RemoteDesktopUniting::startHttpServer(quint16 port, const QString &filesPath)
@@ -192,7 +192,8 @@ void RemoteDesktopUniting::startWebSocketTransfer(quint16 port, const QString &l
     thread->start();
 }
 
-void RemoteDesktopUniting::startWebSocketHandler(const QString &host, const QString &name, const QString &login, const QString &pass)
+void RemoteDesktopUniting::startWebSocketHandler(const QString &host, const QString &name, const QString &login,
+                                                 const QString &pass, const QString &proxyLogin, const QString &proxyPass)
 {
     QThread *thread = new QThread;
     m_webSocketHandler = new WebSocketHandler;
@@ -200,6 +201,7 @@ void RemoteDesktopUniting::startWebSocketHandler(const QString &host, const QStr
     m_webSocketHandler->setUrl(host);
     m_webSocketHandler->setName(name);
     m_webSocketHandler->setLoginPass(login, pass);
+    m_webSocketHandler->setProxyLoginPass(proxyLogin, proxyPass);
 
     connect(thread, &QThread::started, m_webSocketHandler, &WebSocketHandler::createSocket);
     connect(this, &RemoteDesktopUniting::closeSignal, m_webSocketHandler, &WebSocketHandler::removeSocket);
@@ -214,6 +216,9 @@ void RemoteDesktopUniting::startWebSocketHandler(const QString &host, const QStr
 
 void RemoteDesktopUniting::createConnectionToHandler(WebSocketHandler *webSocketHandler)
 {
+    if(!webSocketHandler)
+        return;
+
     connect(m_graberClass, &GraberClass::imageParameters, webSocketHandler, &WebSocketHandler::sendImageParameters);
     connect(m_graberClass, &GraberClass::imageTile, webSocketHandler, &WebSocketHandler::sendImageTile);
     connect(m_graberClass, &GraberClass::screenPositionChanged, m_inputSimulator, &InputSimulator::setScreenPosition);

@@ -17,10 +17,13 @@ static const QByteArray KEY_TILE_RECEIVED = "TLRD";
 static const QByteArray KEY_SET_NONCE = "STNC";
 static const QByteArray KEY_SET_AUTH_REQUEST = "SARQ";
 static const QByteArray KEY_SET_AUTH_RESPONSE = "SARP";
+static const QByteArray KEY_CHECK_AUTH_REQUEST = "CARQ";
+static const QByteArray KEY_CHECK_AUTH_RESPONSE = "CARP";
 static const QByteArray KEY_SET_NAME = "STNM";
 
 const int COMMAD_SIZE = 4;
 const int REQUEST_MIN_SIZE = 6;
+const int SIZE_UUID = 16;
 
 WebSocketHandler::WebSocketHandler(QObject *parent) : QObject(parent),
     m_webSocket(Q_NULLPTR),
@@ -92,10 +95,21 @@ QString WebSocketHandler::getName()
     return m_name;
 }
 
+QByteArray WebSocketHandler::getUuid()
+{
+    return m_uuid;
+}
+
 void WebSocketHandler::setLoginPass(const QString &login, const QString &pass)
 {
     m_login = login;
     m_pass = pass;
+}
+
+void WebSocketHandler::setProxyLoginPass(const QString &login, const QString &pass)
+{
+    m_proxyLogin = login;
+    m_proxyPass = pass;
 }
 
 void WebSocketHandler::setSocket(QWebSocket *webSocket)
@@ -164,6 +178,37 @@ void WebSocketHandler::sendName(const QString &name)
     sendBinaryMessage(data);
 }
 
+void WebSocketHandler::checkRemoteAuthentication(const QByteArray &uuid, const QByteArray &nonce, const QByteArray &request)
+{
+    if(!m_isAuthenticated)
+        return;
+
+    if(uuid.size() != SIZE_UUID ||
+       nonce.size() != SIZE_UUID ||
+       request.size() != SIZE_UUID)
+        return;
+
+    QByteArray data;
+    data.append(KEY_CHECK_AUTH_REQUEST);
+    data.append(arrayFromUint16(static_cast<quint16>(SIZE_UUID * 3)));
+    data.append(uuid);
+    data.append(nonce);
+    data.append(request);
+
+    sendBinaryMessage(data);
+}
+
+void WebSocketHandler::setRemoteAuthenticationResponse(const QByteArray &uuid, const QByteArray &name)
+{
+    QByteArray data;
+    data.append(KEY_CHECK_AUTH_RESPONSE);
+    data.append(arrayFromUint16(static_cast<quint16>(SIZE_UUID + name.size())));
+    data.append(uuid);
+    data.append(name);
+
+    sendBinaryMessage(data);
+}
+
 void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data)
 {
     qDebug()<<"DataParser::newData"<<command<<data;
@@ -173,11 +218,19 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
         if(command == KEY_SET_AUTH_REQUEST)
         {
             if(m_type == HandlerWebClient || m_type == HandlerDesktop)
-                checkAuthentication(data);
+            {
+                if(data.toBase64() == getHashSum(m_nonce, m_login, m_pass))
+                {
+                    if(!m_isAuthenticated)
+                        m_isAuthenticated = true;
+                }
+                else m_isAuthenticated = false;
+
+                sendAuthenticationResponse(m_isAuthenticated);
+            }
             else if(m_type == HandlerProxyClient)
             {
-                qDebug()<<"find Authentication:"<<m_uuid<<m_nonce<<data.toBase64();
-                emit findAuthentication(m_nonce, data);
+                emit remoteAuthenticationRequest(m_uuid, m_nonce, data);
             }
 
             return;
@@ -187,7 +240,7 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
             if(m_type == HandlerSingleClient)
             {
                 m_nonce = data;
-                sendAuthenticationRequest();
+                sendAuthenticationRequestToProxy();
             }
 
             return;
@@ -245,7 +298,7 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
         if(data.size() >= 4)
         {
             quint16 keyCode = uint16FromArray(data.mid(0,2));
-            quint16 keyState = uint16FromArray(data.mid(2,4));
+            quint16 keyState = uint16FromArray(data.mid(2,2));
             emit setKeyPressed(keyCode,static_cast<bool>(keyState));
         }
     }
@@ -254,7 +307,7 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
         if(data.size() >= 4)
         {
             quint16 keyCode = uint16FromArray(data.mid(0,2));
-            quint16 keyState = uint16FromArray(data.mid(2,4));
+            quint16 keyState = uint16FromArray(data.mid(2,2));
             emit setMousePressed(keyCode,static_cast<bool>(keyState));
         }
     }
@@ -262,14 +315,35 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
     {
         if(data.size() >= 4)
         {
-            quint16 keyState = uint16FromArray(data.mid(2,4));
+            quint16 keyState = uint16FromArray(data.mid(2,2));
             emit setWheelChanged(static_cast<bool>(keyState));
         }
     }
     else if(command == KEY_SET_NAME)
     {
         m_name = QString::fromUtf8(data);
-        qDebug()<<"New client:"<<m_name;
+        qDebug()<<"New desktop connected:"<<m_name;
+    }
+    else if(command == KEY_CHECK_AUTH_REQUEST)
+    {
+        if(data.size() == SIZE_UUID * 3)
+        {
+            QByteArray uuid = data.mid(0, SIZE_UUID);
+            QByteArray nonce = data.mid(SIZE_UUID, SIZE_UUID);
+            QByteArray requset = data.mid(SIZE_UUID * 2, SIZE_UUID);
+
+            sendRemoteAuthenticationResponse(uuid, nonce, requset);
+        }
+    }
+    else if(command == KEY_CHECK_AUTH_RESPONSE)
+    {
+        if(data.size() == SIZE_UUID + 2)
+        {
+            QByteArray uuid = data.mid(0, SIZE_UUID);
+            quint16 authResponse = uint16FromArray(data.mid(SIZE_UUID, 2));
+            QByteArray nameUtf8 = m_name.toUtf8();
+            emit remoteAuthenticationResponse(uuid, m_uuid, nameUtf8, static_cast<bool>(authResponse));
+        }
     }
     else
     {
@@ -278,31 +352,9 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
     }
 }
 
-void WebSocketHandler::checkAuthentication(const QByteArray &request)
+void WebSocketHandler::sendAuthenticationRequestToProxy()
 {
-    bool isAuthenticated = false;
-    if(request.toBase64() == getHashSum())
-    {
-        if(!m_isAuthenticated)
-            m_isAuthenticated = true;
-
-        isAuthenticated = true;
-    }
-
-    QByteArray data;
-    data.append(KEY_SET_AUTH_RESPONSE);
-    data.append(arrayFromUint16(2));
-
-    if(isAuthenticated)
-        data.append(arrayFromUint16(1));
-    else data.append(arrayFromUint16(0));
-
-    sendBinaryMessage(data);
-}
-
-void WebSocketHandler::sendAuthenticationRequest()
-{
-    QByteArray hashSum = QByteArray::fromBase64(getHashSum());
+    QByteArray hashSum = QByteArray::fromBase64(getHashSum(m_nonce, m_proxyLogin, m_proxyPass));
     QByteArray data;
     data.append(KEY_SET_AUTH_REQUEST);
     data.append(arrayFromUint16(static_cast<quint16>(hashSum.size())));
@@ -310,11 +362,42 @@ void WebSocketHandler::sendAuthenticationRequest()
     sendBinaryMessage(data);
 }
 
-QByteArray WebSocketHandler::getHashSum()
+void WebSocketHandler::sendAuthenticationResponse(bool state)
 {
-    QString sum = m_login + m_pass;
+    QByteArray data;
+    data.append(KEY_SET_AUTH_RESPONSE);
+    data.append(arrayFromUint16(2));
+    data.append(arrayFromUint16(static_cast<quint16>(state)));
+
+    sendBinaryMessage(data);
+}
+
+void WebSocketHandler::sendRemoteAuthenticationResponse(const QByteArray &uuid, const QByteArray &nonce, const QByteArray &request)
+{
+    bool result = request.toBase64() == getHashSum(nonce, m_login, m_pass);
+
+    if(!result)
+        return;
+
+    if(uuid.size() != SIZE_UUID ||
+       nonce.size() != SIZE_UUID ||
+       request.size() != SIZE_UUID)
+        return;
+
+    QByteArray data;
+    data.append(KEY_CHECK_AUTH_RESPONSE);
+    data.append(arrayFromUint16(static_cast<quint16>(SIZE_UUID + 2)));
+    data.append(uuid);
+    data.append(arrayFromUint16(static_cast<quint16>(result)));
+
+    sendBinaryMessage(data);
+}
+
+QByteArray WebSocketHandler::getHashSum(const QByteArray &nonce, const QString &login, const QString &pass)
+{
+    QString sum = login + pass;
     QByteArray concatFirst = QCryptographicHash::hash(sum.toUtf8(),QCryptographicHash::Md5).toBase64();
-    concatFirst.append(m_nonce.toBase64());
+    concatFirst.append(nonce.toBase64());
     QByteArray result = QCryptographicHash::hash(concatFirst,QCryptographicHash::Md5).toBase64();
     return result;
 }

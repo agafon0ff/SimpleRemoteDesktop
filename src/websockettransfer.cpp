@@ -50,6 +50,24 @@ void WebSocketTransfer::setType(int type)
     m_type = type;
 }
 
+void WebSocketTransfer::checkRemoteAuthentication(const QByteArray &uuid, const QByteArray &nonce, const QByteArray &request)
+{
+    foreach(WebSocketHandler *socketHandler, m_sockets)
+        socketHandler->checkRemoteAuthentication(uuid,nonce,request);
+}
+
+void WebSocketTransfer::setRemoteAuthenticationResponse(const QByteArray &uuidDst, const QByteArray &uuidSrc, const QByteArray &nameSrc)
+{
+    foreach(WebSocketHandler *socketHandler, m_sockets)
+    {
+        if(socketHandler->getUuid() == uuidDst)
+        {
+            socketHandler->setRemoteAuthenticationResponse(uuidSrc, nameSrc);
+            break;
+        }
+    }
+}
+
 void WebSocketTransfer::setSocketConnected()
 {
     QWebSocket *webSocket = m_webSocketServer->nextPendingConnection();
