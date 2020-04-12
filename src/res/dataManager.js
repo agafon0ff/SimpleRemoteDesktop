@@ -188,7 +188,8 @@ class DataManager
             var name = data.subarray(16,data.length);
             var nameString = String.fromCharCode.apply(null, name)
 
-            console.log("KEY_CHECK_AUTH_RESPONSE:",nameString);
+            if(this.loginClass)
+                this.loginClass.addDesktopButton(uuid, nameString);
         }
         else console.log("newData:",command.toString(),command,data);
     }

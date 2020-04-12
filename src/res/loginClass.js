@@ -149,14 +149,47 @@ class LoginClass
         document.body.append(this.loginField);
         window.addEventListener("keyup", this.keyStateChanged.bind(this));
     }
-    
+
     removeLoginHtml()
     {
         this.loginField.remove();
     }
+
+    showWaitImage()
+    {
+        if(this.waitLabel || !this.loginBox)
+            return;
+
+        this.waitLabel = document.createElement('div');
+        this.waitLabel.id = 'waitLabel';
+        this.waitLabel.innerHTML = '<svg id="svgProcess" width="38" height="38" viewBox="0 0 38 38" xmlns="http://www.w3.org/2000/svg"> \
+            <circle fill="#fff" cx="8" cy="18" r="2"> \
+                <animate attributeName="opacity" dur="1s" values="0;1;0" repeatCount="indefinite" begin="0.1"/></circle> \
+            <circle fill="#fff" cx="19" cy="18" r="2"> \
+                <animate attributeName="opacity" dur="1s" values="0;1;0" repeatCount="indefinite" begin="0.2"/></circle></circle> \
+                <circle fill="#fff" cx="30" cy="18" r="2"> \
+            <animate attributeName="opacity" dur="1s" values="0;1;0" repeatCount="indefinite" begin="0.3"/></circle></circle> \
+            </svg>';
+        this.waitLabel.style.cssText = 'position: absolute; \
+            background: rgba(4,4,4,0.9); \
+            border-radius: 5px; \
+            top: 1px; \
+            left: 1px; \
+            width: calc(100% - 2px); \
+            height: calc(100% - 2px); \
+            z-index: 10;';
+        this.loginBox.append(this.waitLabel);
+    }
+
+    removeWaitImage()
+    {
+        if(this.waitLabel)
+            this.waitLabel.remove();
+    }
     
     showWrongRequest()
     {
+        this.removeWaitImage();
         this.inputLogin.value = '';
         this.inputPass.value = '';
         this.statusLabel.innerHTML = 'ERROR: wrong login or password!';
@@ -168,6 +201,57 @@ class LoginClass
         this.nonce = nonce;
     }
     
+    addDesktopButton(uuid, name)
+    {
+        this.removeLoginHtml();
+
+        if(!this.buttonsBox)
+        {
+            this.buttonsBox = document.createElement('div');
+            this.buttonsBox.id = 'buttonsBox';
+            this.buttonsBox.style.cssText = 'position: absolute; \
+                background: none; \
+                color: white; \
+                border: none; \
+                top: calc(50% - 100px); \
+                left: calc(50% - 150px); \
+                width: 300px; \
+                height: 200px;';
+        }
+
+        this.desktopButton = document.createElement('div');
+        this.desktopButton.innerHTML = name;
+        this.desktopButton.classList.add("btnDesktop");
+        this.desktopButton.classList.add("button");
+        this.desktopButton.style.cssText = 'position: absolute; \
+            background: #444; \
+            font: 16px monospace; \
+            color: white; \
+            border: 1px solid #777; \
+            border-radius: 5px; \
+            text-align: center; \
+            line-height: 34px; \
+            margin: 5px; \
+            width: 285px; \
+            height: 34px;';
+        this.desktopButton.onmouseover = function(){this.style.backgroundColor = "#555";}
+        this.desktopButton.onmouseout = function() {this.style.backgroundColor = "#444";}
+        this.desktopButton.onmousedown = this.buttonDesktopClicked.bind(this, uuid);
+
+        this.buttonsBox.append(this.desktopButton);
+        document.body.append(this.buttonsBox);
+
+        var btnHeight = 50;
+        var btnsDesktopList = document.getElementsByClassName('btnDesktop');
+        var btnsCount = btnsDesktopList.length;
+        var boxWidth = btnsCount * btnHeight;
+        this.buttonsBox.style.top = 'calc(50% - '+ boxWidth/2 +'px)';
+        this.buttonsBox.style.height = boxWidth +'px';
+
+        for(var i=0;i<btnsCount;++i)
+            btnsDesktopList[i].style.top = i * btnHeight + 'px';
+    }
+
     setDataManager(dManager)
     {
         if(dManager)
@@ -176,6 +260,13 @@ class LoginClass
     
     btnSubmitClicked()
     {
+        for(var i=0;i<5;++i)
+            this.addDesktopButton("qweqwe"+i, "ASD asd ZXC zxc"+i);
+
+        return;
+
+        this.showWaitImage();
+
         var concatFirst = btoa(rstr_md5(this.inputLogin.value + this.inputPass.value));
         var concatSecond = btoa(rstr_md5(concatFirst + this.nonce));
         
@@ -200,7 +291,15 @@ class LoginClass
     
     keyStateChanged(event)
     {
+        if(this.waitLabel)
+            return;
+
         if(event.keyCode == 13)
             this.btnSubmitClicked();
+    }
+
+    buttonDesktopClicked(uuid)
+    {
+        console.log('button uuid:', uuid);
     }
 }
