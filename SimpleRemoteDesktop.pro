@@ -34,3 +34,22 @@ RESOURCES += \
 
 linux-g++: \
     LIBS += -lX11 -lXtst
+
+# === build parameters ===
+win32: OS_SUFFIX = win32
+linux-g++: OS_SUFFIX = linux
+
+CONFIG(debug, debug|release) {
+    BUILD_FLAG = debug
+    LIB_SUFFIX = d
+} else {
+    BUILD_FLAG = release
+}
+
+RCC_DIR = $${PWD}/build/$${BUILD_FLAG}
+UI_DIR = $${PWD}/build/$${BUILD_FLAG}
+UI_HEADERS_DIR = $${PWD}/build/$${BUILD_FLAG}
+UI_SOURCES_DIR = $${PWD}/build/$${BUILD_FLAG}
+MOC_DIR = $${PWD}/build/$${BUILD_FLAG}
+OBJECTS_DIR = $${PWD}/build/$${BUILD_FLAG}
+DESTDIR = $${PWD}/bin/$${BUILD_FLAG}
