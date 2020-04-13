@@ -32,10 +32,10 @@ CONFIG(debug, debug|release) {
     BUILD_FLAG = release
 }
 
-RCC_DIR = $${PWD}/build/$${BUILD_FLAG}
-UI_DIR = $${PWD}/build/$${BUILD_FLAG}
-UI_HEADERS_DIR = $${PWD}/build/$${BUILD_FLAG}
-UI_SOURCES_DIR = $${PWD}/build/$${BUILD_FLAG}
-MOC_DIR = $${PWD}/build/$${BUILD_FLAG}
-OBJECTS_DIR = $${PWD}/build/$${BUILD_FLAG}
+RCC_DIR = $${PWD}/build/proxy/$${BUILD_FLAG}
+UI_DIR = $${PWD}/build/proxy/$${BUILD_FLAG}
+UI_HEADERS_DIR = $${PWD}/build/proxy/$${BUILD_FLAG}
+UI_SOURCES_DIR = $${PWD}/build/proxy/$${BUILD_FLAG}
+MOC_DIR = $${PWD}/build/proxy/$${BUILD_FLAG}
+OBJECTS_DIR = $${PWD}/build/proxy/$${BUILD_FLAG}
 DESTDIR = $${PWD}/bin/$${BUILD_FLAG}

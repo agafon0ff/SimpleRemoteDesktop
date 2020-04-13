@@ -1,2 +1,4 @@
 SimpleRemoteDesktop.pro.user*
 RemoteDesktopProxy.pro.user*
+build/
+bin/
