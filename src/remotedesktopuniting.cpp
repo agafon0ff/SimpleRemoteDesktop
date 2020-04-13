@@ -209,6 +209,7 @@ void RemoteDesktopUniting::startWebSocketHandler(const QString &host, const QStr
     connect(m_webSocketHandler, &WebSocketHandler::finished, thread, &QThread::quit);
     connect(thread, &QThread::finished, m_webSocketHandler, &WebSocketHandler::deleteLater);
     connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+    createConnectionToHandler(m_webSocketHandler);
 
     m_webSocketHandler->moveToThread(thread);
     thread->start();

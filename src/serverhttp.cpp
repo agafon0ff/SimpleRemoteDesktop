@@ -40,7 +40,10 @@ bool ServerHttp::start()
 void ServerHttp::stop()
 {
     foreach(QTcpSocket* socket, m_tcpSockets)
+    {
         socket->disconnectFromHost();
+        socket->deleteLater();
+    }
 
     if(m_tcpServer)
     {
@@ -200,6 +203,7 @@ void ServerHttp::socketDisconneted()
     Q_UNUSED(address);
 
     m_tcpSockets.removeOne(socket);
+    socket->deleteLater();
 }
 
 void ServerHttp::readDataFromSocket()

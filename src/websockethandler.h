@@ -22,10 +22,18 @@ public:
         HandlerSingleClient
     };
 
+    enum WaitResponseType
+    {
+        WaitTypeUnknown,
+        WaitTypeRemoteAuth
+    };
+
 private:
     QWebSocket *m_webSocket;
     QTimer *m_timerReconnect;
+    QTimer *m_timerWaitResponse;
     int m_type;
+    int m_waitType;
     bool m_isAuthenticated;
     QString m_url;
     QString m_name;
@@ -54,6 +62,8 @@ signals:
     void remoteAuthenticationRequest(const QByteArray &uuid, const QByteArray &nonce, const QByteArray &request);
     void remoteAuthenticationResponse(const QByteArray &uuidDst, const QByteArray &uuidSrc,
                                       const QByteArray &name, bool state);
+    void newProxyConnection(WebSocketHandler *handler, const QByteArray &uuid);
+    void proxyConnectionCreated(bool state);
 
 public slots:
     void createSocket();
@@ -70,12 +80,18 @@ public slots:
     void setProxyLoginPass(const QString &login, const QString &pass);
 
     void setSocket(QWebSocket *webSocket);
+    QWebSocket *getSocket();
+
+
     void sendImageParameters(const QSize &imageSize, int rectWidth);
     void sendImageTile(quint16 posX, quint16 posY,
                        const QByteArray &imageData, quint16 tileNum);
     void sendName(const QString &name);
     void checkRemoteAuthentication(const QByteArray &uuid, const QByteArray &nonce, const QByteArray &request);
     void setRemoteAuthenticationResponse(const QByteArray &uuid, const QByteArray &name);
+
+    void createProxyConnection(WebSocketHandler *handler);
+    void createNormalConnection();
 
 private slots:
     void newData(const QByteArray &command, const QByteArray &data);
@@ -88,7 +104,12 @@ private slots:
     void sendBinaryMessage(const QByteArray &data);
     void textMessageReceived(const QString &message);
     void binaryMessageReceived(const QByteArray &data);
-    void reconnectTimerTick();
+    void timerReconnectTick();
+
+    void startWaitResponseTimer(int msec, int type);
+    void stopWaitResponseTimer();
+    void timerWaitResponseTick();
+
     void debugHexData(const QByteArray &data);
 
 public:

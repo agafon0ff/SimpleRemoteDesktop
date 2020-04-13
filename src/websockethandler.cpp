@@ -20,6 +20,7 @@ static const QByteArray KEY_SET_AUTH_RESPONSE = "SARP";
 static const QByteArray KEY_CHECK_AUTH_REQUEST = "CARQ";
 static const QByteArray KEY_CHECK_AUTH_RESPONSE = "CARP";
 static const QByteArray KEY_SET_NAME = "STNM";
+static const QByteArray KEY_CONNECT_UUID = "CTUU";
 
 const int COMMAD_SIZE = 4;
 const int REQUEST_MIN_SIZE = 6;
@@ -28,7 +29,9 @@ const int SIZE_UUID = 16;
 WebSocketHandler::WebSocketHandler(QObject *parent) : QObject(parent),
     m_webSocket(Q_NULLPTR),
     m_timerReconnect(Q_NULLPTR),
+    m_timerWaitResponse(Q_NULLPTR),
     m_type(HandlerWebClient),
+    m_waitType(WaitTypeUnknown),
     m_isAuthenticated(false)
 {
 
@@ -44,8 +47,11 @@ void WebSocketHandler::createSocket()
     connect(m_webSocket, &QWebSocket::textMessageReceived,this, &WebSocketHandler::textMessageReceived);
     connect(m_webSocket, &QWebSocket::binaryMessageReceived,this, &WebSocketHandler::binaryMessageReceived);
 
-    m_timerReconnect = new QTimer(this);
-    connect(m_timerReconnect,SIGNAL(timeout()),this,SLOT(reconnectTimerTick()));
+    if(!m_timerReconnect)
+    {
+        m_timerReconnect = new QTimer(this);
+        connect(m_timerReconnect, &QTimer::timeout, this, &WebSocketHandler::timerReconnectTick);
+    }
 
     m_webSocket->open(QUrl(m_url));
 }
@@ -59,6 +65,15 @@ void WebSocketHandler::removeSocket()
 
         m_timerReconnect->deleteLater();
         m_timerReconnect = Q_NULLPTR;
+    }
+
+    if(m_timerWaitResponse)
+    {
+        if(m_timerWaitResponse->isActive())
+            m_timerWaitResponse->stop();
+
+        m_timerWaitResponse->deleteLater();
+        m_timerWaitResponse = Q_NULLPTR;
     }
 
     if(m_webSocket)
@@ -133,6 +148,11 @@ void WebSocketHandler::setSocket(QWebSocket *webSocket)
     sendBinaryMessage(data);
 }
 
+QWebSocket *WebSocketHandler::getSocket()
+{
+    return m_webSocket;
+}
+
 void WebSocketHandler::sendImageParameters(const QSize &imageSize, int rectWidth)
 {
     if(!m_isAuthenticated)
@@ -200,6 +220,8 @@ void WebSocketHandler::checkRemoteAuthentication(const QByteArray &uuid, const Q
 
 void WebSocketHandler::setRemoteAuthenticationResponse(const QByteArray &uuid, const QByteArray &name)
 {
+    stopWaitResponseTimer();
+
     QByteArray data;
     data.append(KEY_CHECK_AUTH_RESPONSE);
     data.append(arrayFromUint16(static_cast<quint16>(SIZE_UUID + name.size())));
@@ -209,9 +231,34 @@ void WebSocketHandler::setRemoteAuthenticationResponse(const QByteArray &uuid, c
     sendBinaryMessage(data);
 }
 
+void WebSocketHandler::createProxyConnection(WebSocketHandler *handler)
+{
+    qDebug()<<"WebSocketHandler::createProxyConnection";
+
+    disconnect(m_webSocket, &QWebSocket::binaryMessageReceived,this, &WebSocketHandler::binaryMessageReceived);
+    disconnect(handler->getSocket(), &QWebSocket::binaryMessageReceived,handler, &WebSocketHandler::binaryMessageReceived);
+    disconnect(handler->getSocket(), &QWebSocket::disconnected,this, &WebSocketHandler::socketDisconnected);
+
+    connect(m_webSocket, &QWebSocket::binaryMessageReceived, handler->getSocket(), &QWebSocket::sendBinaryMessage);
+    connect(handler->getSocket(), &QWebSocket::binaryMessageReceived, m_webSocket, &QWebSocket::sendBinaryMessage);
+    connect(handler->getSocket(), &QWebSocket::disconnected, this, &WebSocketHandler::createNormalConnection);
+
+    connect(this, &WebSocketHandler::proxyConnectionCreated, handler, &WebSocketHandler::sendAuthenticationResponse);
+    emit proxyConnectionCreated(true);
+}
+
+void WebSocketHandler::createNormalConnection()
+{
+    qDebug()<<"WebSocketHandler::createNormalConnection";
+
+    connect(m_webSocket, &QWebSocket::binaryMessageReceived,this, &WebSocketHandler::binaryMessageReceived);
+    connect(m_webSocket, &QWebSocket::disconnected,this, &WebSocketHandler::socketDisconnected);
+
+}
+
 void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data)
 {
-    qDebug()<<"DataParser::newData"<<command<<data;
+//    qDebug()<<"DataParser::newData"<<command<<data;
 
     if(!m_isAuthenticated)
     {
@@ -231,6 +278,7 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
             else if(m_type == HandlerProxyClient)
             {
                 emit remoteAuthenticationRequest(m_uuid, m_nonce, data);
+                startWaitResponseTimer(5000,WaitTypeRemoteAuth);
             }
 
             return;
@@ -257,6 +305,10 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
             else m_isAuthenticated = false;
 
             return;
+        }
+        else if(command == KEY_CONNECT_UUID)
+        {
+            emit newProxyConnection(this, data);
         }
 
         return;
@@ -344,6 +396,10 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
             QByteArray nameUtf8 = m_name.toUtf8();
             emit remoteAuthenticationResponse(uuid, m_uuid, nameUtf8, static_cast<bool>(authResponse));
         }
+    }
+    else if(command == KEY_IMAGE_TILE)
+    {
+
     }
     else
     {
@@ -511,7 +567,7 @@ void WebSocketHandler::binaryMessageReceived(const QByteArray &data)
     }
 }
 
-void WebSocketHandler::reconnectTimerTick()
+void WebSocketHandler::timerReconnectTick()
 {
     if(m_webSocket->state() == QAbstractSocket::ConnectedState)
     {
@@ -523,6 +579,37 @@ void WebSocketHandler::reconnectTimerTick()
         m_webSocket->abort();
 
     m_webSocket->open(QUrl(m_url));
+}
+
+void WebSocketHandler::startWaitResponseTimer(int msec, int type)
+{
+    if(!m_timerWaitResponse)
+    {
+        m_timerWaitResponse = new QTimer(this);
+        connect(m_timerWaitResponse, &QTimer::timeout, this, &WebSocketHandler::timerWaitResponseTick);
+    }
+
+    m_timerWaitResponse->start(msec);
+    m_waitType = type;
+}
+
+void WebSocketHandler::stopWaitResponseTimer()
+{
+    if(m_timerWaitResponse)
+        if(m_timerWaitResponse->isActive())
+            m_timerWaitResponse->stop();
+
+    m_waitType = WaitTypeUnknown;
+}
+
+void WebSocketHandler::timerWaitResponseTick()
+{
+    m_timerWaitResponse->stop();
+
+    if(m_waitType == WaitTypeRemoteAuth)
+        sendAuthenticationResponse(false);
+
+    m_waitType = WaitTypeUnknown;
 }
 
 void WebSocketHandler::debugHexData(const QByteArray &data)

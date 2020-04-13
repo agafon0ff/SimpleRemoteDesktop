@@ -128,6 +128,9 @@ void ProxyUnitingClass::createClientWebSocketConnection(WebSocketHandler *webSoc
 
     connect(webSocket, &WebSocketHandler::remoteAuthenticationRequest,
             m_desktopSocketTransfer, &WebSocketTransfer::checkRemoteAuthentication);
+
+    connect(webSocket, &WebSocketHandler::newProxyConnection,
+            m_desktopSocketTransfer, &WebSocketTransfer::createProxyConnection);
 }
 
 void ProxyUnitingClass::createDesktopWebSocketConnection(WebSocketHandler *webSocket)

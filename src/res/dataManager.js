@@ -7,6 +7,7 @@ var KEY_SET_KEY_STATE = new Uint8Array([83,75,83,84]); //"SKST";
 var KEY_CHANGE_DISPLAY = new Uint8Array([67,72,68,80]); //"CHDP";
 var KEY_TILE_RECEIVED = new Uint8Array([84,76,82,68]); //"TLRD";
 var KEY_SET_AUTH_REQUEST = new Uint8Array([83,65,82,81]); //"SARQ";
+var KEY_CONNECT_UUID = new Uint8Array([67,84,85,85]); //"CTUU";
 var KEY_DEBUG = new Uint8Array([68,66,85,71]); //"DBUG";
 
 

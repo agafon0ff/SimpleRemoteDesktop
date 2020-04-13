@@ -42,6 +42,7 @@ public slots:
     void setType(int type);
     void checkRemoteAuthentication(const QByteArray &uuid, const QByteArray &nonce, const QByteArray &request);
     void setRemoteAuthenticationResponse(const QByteArray &uuidDst, const QByteArray &uuidSrc, const QByteArray &nameSrc);
+    void createProxyConnection(WebSocketHandler *handler, const QByteArray &uuid);
 
 private slots:
     void setSocketConnected();

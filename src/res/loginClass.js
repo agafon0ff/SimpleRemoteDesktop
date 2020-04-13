@@ -152,7 +152,18 @@ class LoginClass
 
     removeLoginHtml()
     {
-        this.loginField.remove();
+        if(this.waitLabel)
+            this.waitLabel.remove();
+
+        if(this.loginField)
+            this.loginField.remove();
+
+        if(this.buttonsBox)
+            this.buttonsBox.remove();
+
+        this.waitLabel = null;
+        this.loginField = null;
+        this.buttonsBox = null;
     }
 
     showWaitImage()
@@ -185,6 +196,8 @@ class LoginClass
     {
         if(this.waitLabel)
             this.waitLabel.remove();
+
+        this.waitLabel = null;
     }
     
     showWrongRequest()
@@ -260,33 +273,17 @@ class LoginClass
     
     btnSubmitClicked()
     {
-        for(var i=0;i<5;++i)
-            this.addDesktopButton("qweqwe"+i, "ASD asd ZXC zxc"+i);
-
-        return;
-
         this.showWaitImage();
 
         var concatFirst = btoa(rstr_md5(this.inputLogin.value + this.inputPass.value));
         var concatSecond = btoa(rstr_md5(concatFirst + this.nonce));
-        
         var binaryString = atob(concatSecond);
-        var requestSize = binaryString.length;
-        var key = KEY_SET_AUTH_REQUEST;
-        
-        var buf = new Uint8Array(requestSize + 6);
-        buf[0] = key[0];
-        buf[1] = key[1];
-        buf[2] = key[2];
-        buf[3] = key[3];
-        buf[4] = requestSize;
-        buf[5] = requestSize >> 8;
-        
-        for(var i=0;i<requestSize;++i)
-            buf[i + 6] = binaryString.charCodeAt(i);
-        
-        if(this.dataManager)
-            this.dataManager.sendToSocket(buf);
+
+        var response = new Uint8Array(binaryString.length);
+        for(var i=0;i<response.length;++i)
+            response[i] = binaryString.charCodeAt(i);
+
+        this.sendDataMessage(KEY_SET_AUTH_REQUEST, response);
     }
     
     keyStateChanged(event)
@@ -300,6 +297,24 @@ class LoginClass
 
     buttonDesktopClicked(uuid)
     {
-        console.log('button uuid:', uuid);
+        this.sendDataMessage(KEY_CONNECT_UUID, uuid);
+    }
+
+    sendDataMessage(key, parameter)
+    {
+        var paramSize =  parameter.length
+        var buf = new Uint8Array(paramSize + 6);
+        buf[0] = key[0];
+        buf[1] = key[1];
+        buf[2] = key[2];
+        buf[3] = key[3];
+        buf[4] = paramSize;
+        buf[5] = paramSize >> 8;
+
+        for(var i=0;i<paramSize;++i)
+            buf[i + 6] = parameter[i];
+
+        if(this.dataManager)
+            this.dataManager.sendToSocket(buf);
     }
 }

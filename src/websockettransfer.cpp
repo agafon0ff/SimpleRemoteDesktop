@@ -68,6 +68,18 @@ void WebSocketTransfer::setRemoteAuthenticationResponse(const QByteArray &uuidDs
     }
 }
 
+void WebSocketTransfer::createProxyConnection(WebSocketHandler *handler, const QByteArray &uuid)
+{
+    foreach(WebSocketHandler *socketHandler, m_sockets)
+    {
+        if(socketHandler->getUuid() == uuid)
+        {
+            socketHandler->createProxyConnection(handler);
+            break;
+        }
+    }
+}
+
 void WebSocketTransfer::setSocketConnected()
 {
     QWebSocket *webSocket = m_webSocketServer->nextPendingConnection();
@@ -104,6 +116,10 @@ void WebSocketTransfer::socketDisconnected(WebSocketHandler *pointer)
     if(pointer)
     {
         qDebug()<<"Disconnected one:"<<pointer->getName();
+
+        QWebSocket *socket = pointer->getSocket();
+        socket->disconnect();
+        socket->deleteLater();
 
         pointer->disconnect();
         pointer->deleteLater();
