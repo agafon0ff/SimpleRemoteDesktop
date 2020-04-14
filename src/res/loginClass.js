@@ -216,7 +216,14 @@ class LoginClass
     
     addDesktopButton(uuid, name)
     {
-        this.removeLoginHtml();
+        if(this.waitLabel)
+            this.waitLabel.remove();
+
+        if(this.loginField)
+            this.loginField.remove();
+
+        this.waitLabel = null;
+        this.loginField = null;
 
         if(!this.buttonsBox)
         {

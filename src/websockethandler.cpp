@@ -220,6 +220,7 @@ void WebSocketHandler::checkRemoteAuthentication(const QByteArray &uuid, const Q
 
 void WebSocketHandler::setRemoteAuthenticationResponse(const QByteArray &uuid, const QByteArray &name)
 {
+    qDebug()<<"WebSocketHandler::setRemoteAuthenticationResponse"<<uuid<<name;
     stopWaitResponseTimer();
 
     QByteArray data;
