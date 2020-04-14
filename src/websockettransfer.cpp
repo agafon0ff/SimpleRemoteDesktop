@@ -118,7 +118,6 @@ void WebSocketTransfer::socketDisconnected(WebSocketHandler *pointer)
         qDebug()<<"Disconnected one:"<<pointer->getName();
 
         QWebSocket *socket = pointer->getSocket();
-        socket->disconnect();
         socket->deleteLater();
 
         pointer->disconnect();

@@ -233,8 +233,6 @@ void WebSocketHandler::setRemoteAuthenticationResponse(const QByteArray &uuid, c
 
 void WebSocketHandler::createProxyConnection(WebSocketHandler *handler)
 {
-    qDebug()<<"WebSocketHandler::createProxyConnection";
-
     disconnect(m_webSocket, &QWebSocket::binaryMessageReceived,this, &WebSocketHandler::binaryMessageReceived);
     disconnect(handler->getSocket(), &QWebSocket::binaryMessageReceived,handler, &WebSocketHandler::binaryMessageReceived);
     disconnect(handler->getSocket(), &QWebSocket::disconnected,this, &WebSocketHandler::socketDisconnected);
@@ -249,11 +247,8 @@ void WebSocketHandler::createProxyConnection(WebSocketHandler *handler)
 
 void WebSocketHandler::createNormalConnection()
 {
-    qDebug()<<"WebSocketHandler::createNormalConnection";
-
     connect(m_webSocket, &QWebSocket::binaryMessageReceived,this, &WebSocketHandler::binaryMessageReceived);
     connect(m_webSocket, &QWebSocket::disconnected,this, &WebSocketHandler::socketDisconnected);
-
 }
 
 void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data)
