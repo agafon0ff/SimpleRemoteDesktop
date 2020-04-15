@@ -7,6 +7,8 @@ Simple interaction work scheme:
 
 ![SRD_sheme](https://user-images.githubusercontent.com/13070282/79386197-78542080-7f72-11ea-8c26-3611b935c79a.jpg)
 
-This project contains two pro-files for compile.
+This project contains two pro-files for compile:
+
 SimpleRemoteDesktop - client (Windows, Linux).
+
 RemoteDesktopProxy - proxy-server (behind the NAT). 
