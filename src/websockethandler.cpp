@@ -140,6 +140,8 @@ void WebSocketHandler::setSocket(QWebSocket *webSocket)
     m_uuid = QUuid::createUuid().toRfc4122();
     m_nonce = QUuid::createUuid().toRfc4122();
 
+    qDebug()<<"WebSocketHandler::setSocket"<<m_type<<m_uuid.toBase64();
+
     QByteArray data;
     data.append(KEY_SET_NONCE);
     data.append(arrayFromUint16(static_cast<quint16>(m_nonce.size())));
@@ -203,6 +205,8 @@ void WebSocketHandler::checkRemoteAuthentication(const QByteArray &uuid, const Q
     if(!m_isAuthenticated)
         return;
 
+    qDebug()<<"WebSocketHandler::checkRemoteAuthentication"<<m_type<<uuid.toBase64();
+
     if(uuid.size() != SIZE_UUID ||
        nonce.size() != SIZE_UUID ||
        request.size() != SIZE_UUID)
@@ -220,7 +224,8 @@ void WebSocketHandler::checkRemoteAuthentication(const QByteArray &uuid, const Q
 
 void WebSocketHandler::setRemoteAuthenticationResponse(const QByteArray &uuid, const QByteArray &name)
 {
-    qDebug()<<"WebSocketHandler::setRemoteAuthenticationResponse"<<uuid<<name;
+    qDebug()<<"WebSocketHandler::setRemoteAuthenticationResponse"<<m_type<<uuid.toBase64()<<name;
+
     stopWaitResponseTimer();
 
     QByteArray data;
@@ -234,7 +239,7 @@ void WebSocketHandler::setRemoteAuthenticationResponse(const QByteArray &uuid, c
 
 void WebSocketHandler::createProxyConnection(WebSocketHandler *handler)
 {
-    disconnect(m_webSocket, &QWebSocket::binaryMessageReceived,this, &WebSocketHandler::binaryMessageReceived);
+//    disconnect(m_webSocket, &QWebSocket::binaryMessageReceived,this, &WebSocketHandler::binaryMessageReceived);
     disconnect(handler->getSocket(), &QWebSocket::binaryMessageReceived,handler, &WebSocketHandler::binaryMessageReceived);
     disconnect(handler->getSocket(), &QWebSocket::disconnected,this, &WebSocketHandler::socketDisconnected);
 
@@ -248,7 +253,7 @@ void WebSocketHandler::createProxyConnection(WebSocketHandler *handler)
 
 void WebSocketHandler::createNormalConnection()
 {
-    connect(m_webSocket, &QWebSocket::binaryMessageReceived,this, &WebSocketHandler::binaryMessageReceived);
+//    connect(m_webSocket, &QWebSocket::binaryMessageReceived,this, &WebSocketHandler::binaryMessageReceived);
     connect(m_webSocket, &QWebSocket::disconnected,this, &WebSocketHandler::socketDisconnected);
 }
 
@@ -308,6 +313,11 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
         else if(command == KEY_CONNECT_UUID)
         {
             emit newProxyConnection(this, data);
+        }
+        else
+        {
+            qDebug()<<"DataParser::newData"<<command<<data;
+            debugHexData(data);
         }
 
         return;
@@ -430,6 +440,8 @@ void WebSocketHandler::sendAuthenticationResponse(bool state)
 void WebSocketHandler::sendRemoteAuthenticationResponse(const QByteArray &uuid, const QByteArray &nonce, const QByteArray &request)
 {
     bool result = request.toBase64() == getHashSum(nonce, m_login, m_pass);
+
+    qDebug()<<"WebSocketHandler::sendRemoteAuthenticationResponse"<<m_type<<uuid.toBase64();
 
     if(!result)
         return;

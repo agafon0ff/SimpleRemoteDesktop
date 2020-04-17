@@ -58,6 +58,8 @@ void WebSocketTransfer::checkRemoteAuthentication(const QByteArray &uuid, const 
 
 void WebSocketTransfer::setRemoteAuthenticationResponse(const QByteArray &uuidDst, const QByteArray &uuidSrc, const QByteArray &nameSrc)
 {
+    qDebug()<<"WebSocketTransfer::setRemoteAuthenticationResponse dst:"<<uuidDst.toBase64()<<"src:"<<uuidSrc.toBase64();
+
     foreach(WebSocketHandler *socketHandler, m_sockets)
     {
         if(socketHandler->getUuid() == uuidDst)

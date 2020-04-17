@@ -148,8 +148,8 @@ void RemoteDesktopUniting::loadSettings()
     settings.endGroup();
     settings.sync();
 
-    startHttpServer(portHttp,filesPath);
-    startWebSocketTransfer(portWeb,login,pass);
+    startHttpServer(static_cast<quint16>(portHttp),filesPath);
+    startWebSocketTransfer(static_cast<quint16>(portWeb),login,pass);
     startWebSocketHandler(proxyHost,name,login,pass,proxyLogin,proxyPass);
 }
 

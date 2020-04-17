@@ -70,9 +70,9 @@ void ProxyUnitingClass::loadSettings()
     settings.endGroup();
     settings.sync();
 
-    startHttpServer(portHttp,filesPath);
-    startClientsWebSocketTransfer(portWebClient,login,pass);
-    startDesktopWebSocketTransfer(portWebDesktop,login,pass);
+    startHttpServer(static_cast<quint16>(portHttp),filesPath);
+    startClientsWebSocketTransfer(static_cast<quint16>(portWebClient),login,pass);
+    startDesktopWebSocketTransfer(static_cast<quint16>(portWebDesktop),login,pass);
 }
 
 void ProxyUnitingClass::startHttpServer(quint16 port, const QString &filesPath)

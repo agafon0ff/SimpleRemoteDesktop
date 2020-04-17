@@ -17,8 +17,7 @@ GraberClass::GraberClass(QObject *parent) : QObject(parent),
     m_screenNumber(0),
     m_currentTileNum(0),
     m_receivedTileNum(0),
-    m_permitCounter(0),
-    m_stopGraberCounter(0)
+    m_permitCounter(0)
 {
     m_meanCounter.resize(4);
     m_meanCounter.fill(1);
@@ -154,17 +153,8 @@ bool GraberClass::isSendTilePermit()
 
         if(m_permitCounter > 20)
         {
-
             m_permitCounter = 0;
             result = true;
-
-            ++m_stopGraberCounter;
-            if(m_stopGraberCounter == 10)
-            {
-                m_stopGraberCounter = 0;
-                stopSending();
-                result = false;
-            }
         }
     }
 

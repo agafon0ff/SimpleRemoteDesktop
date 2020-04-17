@@ -33,7 +33,6 @@ private:
     int m_currentTileNum;
     int m_receivedTileNum;
     int m_permitCounter;
-    int m_stopGraberCounter;
     QImage m_lastImage;
 
     QVector<int> m_meanCounter;
