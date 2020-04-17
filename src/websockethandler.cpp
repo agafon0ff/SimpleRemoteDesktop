@@ -270,6 +270,7 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
                 else m_isAuthenticated = false;
 
                 sendAuthenticationResponse(m_isAuthenticated);
+                qDebug()<<"Authentication attempt: "<<m_isAuthenticated;
             }
             else if(m_type == HandlerProxyClient)
             {
@@ -299,6 +300,8 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
                 sendName(m_name);
             }
             else m_isAuthenticated = false;
+
+            emit authenticatedStatus(m_isAuthenticated);
 
             return;
         }
@@ -479,12 +482,13 @@ void WebSocketHandler::socketStateChanged(QAbstractSocket::SocketState state)
         case QAbstractSocket::ConnectedState:
         {
             qDebug()<<"SocketWeb::socketStateChanged: Connected to server.";
+            emit connectedStatus(true);
             break;
         }
         case QAbstractSocket::ClosingState:
         {
             qDebug()<<"SocketWeb::socketStateChanged: Disconnected from server.";
-
+            emit connectedStatus(false);
             m_isAuthenticated = false;
 
             if(m_timerReconnect)

@@ -51,6 +51,8 @@ private:
 signals:
     void finished();
     void getDesktop();
+    void connectedStatus(bool);
+    void authenticatedStatus(bool);
     void receivedTileNum(quint16 num);
     void changeDisplayNum();
     void setKeyPressed(quint16 keyCode, bool state);
