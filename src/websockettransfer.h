@@ -32,7 +32,8 @@ private:
 signals:
     void finished();
     void newSocketConnected(WebSocketHandler *webSocket);
-    void disconnectedAll();
+    void connectedSocketUuid(const QByteArray &uuid);
+    void disconnectedSocketUuid(const QByteArray &uuid);
 
 public slots:
     void start();
@@ -42,7 +43,7 @@ public slots:
     void setType(int type);
     void checkRemoteAuthentication(const QByteArray &uuid, const QByteArray &nonce, const QByteArray &request);
     void setRemoteAuthenticationResponse(const QByteArray &uuidDst, const QByteArray &uuidSrc, const QByteArray &nameSrc);
-    void createProxyConnection(WebSocketHandler *handler, const QByteArray &uuid);
+    void createProxyConnection(WebSocketHandler *handler, const QByteArray &uuidSrc, const QByteArray &uuidDst);
 
 private slots:
     void setSocketConnected();

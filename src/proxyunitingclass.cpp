@@ -131,6 +131,8 @@ void ProxyUnitingClass::createClientWebSocketConnection(WebSocketHandler *webSoc
 
     connect(webSocket, &WebSocketHandler::newProxyConnection,
             m_desktopSocketTransfer, &WebSocketTransfer::createProxyConnection);
+
+
 }
 
 void ProxyUnitingClass::createDesktopWebSocketConnection(WebSocketHandler *webSocket)

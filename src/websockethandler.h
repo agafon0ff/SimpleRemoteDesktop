@@ -61,11 +61,14 @@ signals:
     void setMouseMove(quint16 posX, quint16 posY);
     void setMouseDelta(qint16 deltaX, qint16 deltaY);
     void disconnected(WebSocketHandler *pointer);
+    void disconnectedUuid(const QByteArray &uuid);
     void remoteAuthenticationRequest(const QByteArray &uuid, const QByteArray &nonce, const QByteArray &request);
     void remoteAuthenticationResponse(const QByteArray &uuidDst, const QByteArray &uuidSrc,
                                       const QByteArray &name, bool state);
-    void newProxyConnection(WebSocketHandler *handler, const QByteArray &uuid);
+    void newProxyConnection(WebSocketHandler *handler, const QByteArray &uuidSrc, const QByteArray &uuidDst);
     void proxyConnectionCreated(bool state);
+    void connectedProxyClient(const QByteArray &uuid);
+    void disconnectedProxyClient(const QByteArray &uuid);
 
 public slots:
     void createSocket();
@@ -91,9 +94,8 @@ public slots:
     void sendName(const QString &name);
     void checkRemoteAuthentication(const QByteArray &uuid, const QByteArray &nonce, const QByteArray &request);
     void setRemoteAuthenticationResponse(const QByteArray &uuid, const QByteArray &name);
-
-    void createProxyConnection(WebSocketHandler *handler);
-    void createNormalConnection();
+    void createProxyConnection(WebSocketHandler *handler, const QByteArray &uuid);
+    void proxyHandlerDisconnected(const QByteArray &uuid);
 
 private slots:
     void newData(const QByteArray &command, const QByteArray &data);

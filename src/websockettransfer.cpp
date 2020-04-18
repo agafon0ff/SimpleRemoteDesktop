@@ -70,13 +70,13 @@ void WebSocketTransfer::setRemoteAuthenticationResponse(const QByteArray &uuidDs
     }
 }
 
-void WebSocketTransfer::createProxyConnection(WebSocketHandler *handler, const QByteArray &uuid)
+void WebSocketTransfer::createProxyConnection(WebSocketHandler *handler, const QByteArray &uuidSrc, const QByteArray &uuidDst)
 {
     foreach(WebSocketHandler *socketHandler, m_sockets)
     {
-        if(socketHandler->getUuid() == uuid)
+        if(socketHandler->getUuid() == uuidDst)
         {
-            socketHandler->createProxyConnection(handler);
+            socketHandler->createProxyConnection(handler, uuidSrc);
             break;
         }
     }
@@ -101,23 +101,15 @@ void WebSocketTransfer::setSocketConnected()
     m_sockets.append(socketHandler);
 
     emit newSocketConnected(socketHandler);
+    emit connectedSocketUuid(socketHandler->getUuid());
 }
 
 void WebSocketTransfer::socketDisconnected(WebSocketHandler *pointer)
 {
-    bool isDisconnectedAll = false;
-
-    if(m_sockets.contains(pointer))
-    {
-        m_sockets.removeOne(pointer);
-
-        if(m_sockets.size() == 0)
-            isDisconnectedAll = true;
-    }
-
     if(pointer)
     {
         qDebug()<<"Disconnected one:"<<pointer->getName();
+        emit disconnectedSocketUuid(pointer->getUuid());
 
         QWebSocket *socket = pointer->getSocket();
         socket->deleteLater();
@@ -125,7 +117,4 @@ void WebSocketTransfer::socketDisconnected(WebSocketHandler *pointer)
         pointer->disconnect();
         pointer->deleteLater();
     }
-
-    if(isDisconnectedAll)
-        emit disconnectedAll();
 }

@@ -186,7 +186,8 @@ void RemoteDesktopUniting::startWebSocketTransfer(quint16 port, const QString &l
     connect(thread, &QThread::finished, thread, &QThread::deleteLater);
 
     connect(m_webSocketTransfer, &WebSocketTransfer::newSocketConnected, this, &RemoteDesktopUniting::createConnectionToHandler);
-    connect(m_webSocketTransfer, &WebSocketTransfer::disconnectedAll, m_graberClass, &GraberClass::stopSending);
+    connect(m_webSocketTransfer, &WebSocketTransfer::connectedSocketUuid, this, &RemoteDesktopUniting::remoteClientConnected);
+    connect(m_webSocketTransfer, &WebSocketTransfer::disconnectedSocketUuid, this, &RemoteDesktopUniting::remoteClientDisconnected);
 
     m_webSocketTransfer->moveToThread(thread);
     thread->start();
@@ -209,6 +210,10 @@ void RemoteDesktopUniting::startWebSocketHandler(const QString &host, const QStr
     connect(m_webSocketHandler, &WebSocketHandler::finished, thread, &QThread::quit);
     connect(thread, &QThread::finished, m_webSocketHandler, &WebSocketHandler::deleteLater);
     connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+
+    connect(m_webSocketHandler, &WebSocketHandler::connectedProxyClient, this, &RemoteDesktopUniting::remoteClientConnected);
+    connect(m_webSocketHandler, &WebSocketHandler::disconnectedProxyClient, this, &RemoteDesktopUniting::remoteClientDisconnected);
+
     createConnectionToHandler(m_webSocketHandler);
 
     m_webSocketHandler->moveToThread(thread);
@@ -249,4 +254,25 @@ void RemoteDesktopUniting::finishedWebSockeHandler()
 
     if(!m_webSocketTransfer)
         QApplication::quit();
+}
+
+void RemoteDesktopUniting::remoteClientConnected(const QByteArray &uuid)
+{
+    if(!m_remoteClientsList.contains(uuid))
+        m_remoteClientsList.append(uuid);
+
+    qDebug()<<"RemoteDesktopUniting::m_remoteClientsList"<<m_remoteClientsList.size();
+}
+
+void RemoteDesktopUniting::remoteClientDisconnected(const QByteArray &uuid)
+{
+    if(m_remoteClientsList.contains(uuid))
+    {
+        m_remoteClientsList.removeOne(uuid);
+
+        if(m_remoteClientsList.size() == 0)
+            m_graberClass->stopSending();
+    }
+
+    qDebug()<<"RemoteDesktopUniting::remoteClientDisconnected"<<m_remoteClientsList.size();
 }

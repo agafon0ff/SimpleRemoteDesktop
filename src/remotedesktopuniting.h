@@ -31,6 +31,8 @@ private:
     QString m_currentIp;
     int m_currentPort;
 
+    QList<QByteArray> m_remoteClientsList;
+
 signals:
     void closeSignal();
 
@@ -48,6 +50,8 @@ private slots:
     void createConnectionToHandler(WebSocketHandler *webSocketHandler);
     void finishedWebSockeTransfer();
     void finishedWebSockeHandler();
+    void remoteClientConnected(const QByteArray &uuid);
+    void remoteClientDisconnected(const QByteArray &uuid);
 };
 
 #endif // REMOTEDESKTOPUNITING_H

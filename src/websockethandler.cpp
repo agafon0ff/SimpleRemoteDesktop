@@ -21,6 +21,8 @@ static const QByteArray KEY_CHECK_AUTH_REQUEST = "CARQ";
 static const QByteArray KEY_CHECK_AUTH_RESPONSE = "CARP";
 static const QByteArray KEY_SET_NAME = "STNM";
 static const QByteArray KEY_CONNECT_UUID = "CTUU";
+static const QByteArray KEY_CONNECTED_PROXY_CLIENT = "CNPC";
+static const QByteArray KEY_DISCONNECTED_PROXY_CLIENT = "DNPC";
 
 const int COMMAD_SIZE = 4;
 const int REQUEST_MIN_SIZE = 6;
@@ -237,24 +239,32 @@ void WebSocketHandler::setRemoteAuthenticationResponse(const QByteArray &uuid, c
     sendBinaryMessage(data);
 }
 
-void WebSocketHandler::createProxyConnection(WebSocketHandler *handler)
+void WebSocketHandler::createProxyConnection(WebSocketHandler *handler, const QByteArray &uuid)
 {
 //    disconnect(m_webSocket, &QWebSocket::binaryMessageReceived,this, &WebSocketHandler::binaryMessageReceived);
     disconnect(handler->getSocket(), &QWebSocket::binaryMessageReceived,handler, &WebSocketHandler::binaryMessageReceived);
-    disconnect(handler->getSocket(), &QWebSocket::disconnected,this, &WebSocketHandler::socketDisconnected);
 
     connect(m_webSocket, &QWebSocket::binaryMessageReceived, handler->getSocket(), &QWebSocket::sendBinaryMessage);
     connect(handler->getSocket(), &QWebSocket::binaryMessageReceived, m_webSocket, &QWebSocket::sendBinaryMessage);
-    connect(handler->getSocket(), &QWebSocket::disconnected, this, &WebSocketHandler::createNormalConnection);
+    connect(handler, &WebSocketHandler::disconnectedUuid, this, &WebSocketHandler::proxyHandlerDisconnected);
 
     connect(this, &WebSocketHandler::proxyConnectionCreated, handler, &WebSocketHandler::sendAuthenticationResponse);
     emit proxyConnectionCreated(true);
+
+    QByteArray data;
+    data.append(KEY_CONNECTED_PROXY_CLIENT);
+    data.append(arrayFromUint16(static_cast<quint16>(uuid.size())));
+    data.append(uuid);
+    sendBinaryMessage(data);
 }
 
-void WebSocketHandler::createNormalConnection()
+void WebSocketHandler::proxyHandlerDisconnected(const QByteArray &uuid)
 {
-//    connect(m_webSocket, &QWebSocket::binaryMessageReceived,this, &WebSocketHandler::binaryMessageReceived);
-    connect(m_webSocket, &QWebSocket::disconnected,this, &WebSocketHandler::socketDisconnected);
+    QByteArray data;
+    data.append(KEY_DISCONNECTED_PROXY_CLIENT);
+    data.append(arrayFromUint16(static_cast<quint16>(uuid.size())));
+    data.append(uuid);
+    sendBinaryMessage(data);
 }
 
 void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data)
@@ -312,7 +322,7 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
         }
         else if(command == KEY_CONNECT_UUID)
         {
-            emit newProxyConnection(this, data);
+            emit newProxyConnection(this, m_uuid, data);
         }
         else
         {
@@ -323,7 +333,11 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
         return;
     }
 
-    if(command == KEY_GET_IMAGE)
+    if(command == KEY_IMAGE_TILE)
+    {
+        return;
+    }
+    else if(command == KEY_GET_IMAGE)
     {
         emit getDesktop();
     }
@@ -406,9 +420,13 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
             emit remoteAuthenticationResponse(uuid, m_uuid, nameUtf8, static_cast<bool>(authResponse));
         }
     }
-    else if(command == KEY_IMAGE_TILE)
+    else if(command == KEY_CONNECTED_PROXY_CLIENT)
     {
-
+        emit connectedProxyClient(data);
+    }
+    else if(command == KEY_DISCONNECTED_PROXY_CLIENT)
+    {
+        emit disconnectedProxyClient(data);
     }
     else
     {
@@ -435,6 +453,9 @@ void WebSocketHandler::sendAuthenticationResponse(bool state)
     data.append(arrayFromUint16(static_cast<quint16>(state)));
 
     sendBinaryMessage(data);
+
+    WebSocketHandler *handler = static_cast<WebSocketHandler*>(sender());
+    disconnect(handler, &WebSocketHandler::proxyConnectionCreated, this, &WebSocketHandler::sendAuthenticationResponse);
 }
 
 void WebSocketHandler::sendRemoteAuthenticationResponse(const QByteArray &uuid, const QByteArray &nonce, const QByteArray &request)
@@ -518,6 +539,7 @@ void WebSocketHandler::socketStateChanged(QAbstractSocket::SocketState state)
 
 void WebSocketHandler::socketDisconnected()
 {
+    emit disconnectedUuid(m_uuid);
     emit disconnected(this);
 }
 
