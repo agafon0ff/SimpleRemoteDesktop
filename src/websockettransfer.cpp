@@ -106,6 +106,9 @@ void WebSocketTransfer::setSocketConnected()
 
 void WebSocketTransfer::socketDisconnected(WebSocketHandler *pointer)
 {
+    if(m_sockets.contains(pointer))
+        m_sockets.removeOne(pointer);
+
     if(pointer)
     {
         qDebug()<<"Disconnected one:"<<pointer->getName();
