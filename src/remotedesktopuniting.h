@@ -30,6 +30,7 @@ private:
 
     QString m_currentIp;
     int m_currentPort;
+    bool m_isConnectedToProxy;
 
     QList<QByteArray> m_remoteClientsList;
 
@@ -52,6 +53,7 @@ private slots:
     void finishedWebSockeHandler();
     void remoteClientConnected(const QByteArray &uuid);
     void remoteClientDisconnected(const QByteArray &uuid);
+    void connectedToProxyServer(bool state);
 };
 
 #endif // REMOTEDESKTOPUNITING_H

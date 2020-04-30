@@ -23,7 +23,8 @@ RemoteDesktopUniting::RemoteDesktopUniting(QObject *parent) : QObject(parent),
     m_trayMenu(new QMenu),
     m_trayIcon(new QSystemTrayIcon(this)),
     m_currentIp("127.0.0.1"),
-    m_currentPort(8080)
+    m_currentPort(8080),
+    m_isConnectedToProxy(false)
 {
     QCommonStyle style;
     m_trayMenu->addAction(QIcon(style.standardPixmap(QStyle::SP_MessageBoxInformation)),"Help");
@@ -52,9 +53,15 @@ void RemoteDesktopUniting::actionTriggered(QAction *action)
 
 void RemoteDesktopUniting::showInfoMessage()
 {
-    m_trayIcon->showMessage("SimpleRemoteDesktop",
-                            "To connect, enter in browser:\n" +
-                            m_currentIp + ":" + QString::number(m_currentPort),
+    QString message("To connect, enter in browser:\n" +
+                   m_currentIp + ":" + QString::number(m_currentPort) + "\n"
+                   "Proxy-server connection: ");
+
+    if(m_isConnectedToProxy)
+        message.append("true.");
+    else message.append("false :(");
+
+    m_trayIcon->showMessage("SimpleRemoteDesktop", message,
                             QSystemTrayIcon::Information);
 }
 
@@ -127,21 +134,21 @@ void RemoteDesktopUniting::loadSettings()
     QString proxyHost = settings.value("proxyHost").toString();
     if(proxyHost.isEmpty())
     {
-        proxyHost = "ws://127.0.0.1:8082";
+        proxyHost = "ws://asv.fvds.ru:8082";
         settings.setValue("proxyHost",proxyHost);
     }
 
     QString proxyLogin = settings.value("proxyLogin").toString();
     if(proxyLogin.isEmpty())
     {
-        proxyLogin = "plogin";
+        proxyLogin = "sysadmin";
         settings.setValue("proxyLogin",proxyLogin);
     }
 
     QString proxyPass = settings.value("proxyPass").toString();
     if(proxyPass.isEmpty())
     {
-        proxyPass = "ppass";
+        proxyPass = "12345678";
         settings.setValue("proxyPass",proxyPass);
     }
 
@@ -213,6 +220,7 @@ void RemoteDesktopUniting::startWebSocketHandler(const QString &host, const QStr
 
     connect(m_webSocketHandler, &WebSocketHandler::connectedProxyClient, this, &RemoteDesktopUniting::remoteClientConnected);
     connect(m_webSocketHandler, &WebSocketHandler::disconnectedProxyClient, this, &RemoteDesktopUniting::remoteClientDisconnected);
+    connect(m_webSocketHandler, &WebSocketHandler::connectedStatus, this, &RemoteDesktopUniting::connectedToProxyServer);
 
     createConnectionToHandler(m_webSocketHandler);
 
@@ -275,4 +283,15 @@ void RemoteDesktopUniting::remoteClientDisconnected(const QByteArray &uuid)
     }
 
     qDebug()<<"RemoteDesktopUniting::remoteClientDisconnected"<<m_remoteClientsList.size();
+}
+
+void RemoteDesktopUniting::connectedToProxyServer(bool state)
+{
+    if(m_isConnectedToProxy != state)
+    {
+        m_isConnectedToProxy = state;
+
+        if(state)
+            showInfoMessage();
+    }
 }

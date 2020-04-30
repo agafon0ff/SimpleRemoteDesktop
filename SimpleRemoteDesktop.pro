@@ -9,6 +9,8 @@ QT += core gui widgets network websockets
 TARGET = SimpleRemoteDesktop
 TEMPLATE = app
 
+QMAKE_LFLAGS_RELEASE += -static -static-libgcc
+
 CONFIG += c++11
 
 INCLUDEPATH += src

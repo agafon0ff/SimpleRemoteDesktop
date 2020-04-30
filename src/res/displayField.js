@@ -112,9 +112,9 @@ class DisplayField
             var distance = Math.sqrt(((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1)));
 
             if(distance > this.touchDistance)
-                this.scaleSize += 1;
+                this.scaleSize += 0.5;
             if(distance < this.touchDistance)
-                this.scaleSize -= 1;
+                this.scaleSize -= 0.5;
             if(this.scaleSize < 0)
                 this.scaleSize = 0;
             
@@ -173,12 +173,27 @@ class DisplayField
             this.dataManager.sendParameters(KEY_SET_MOUSE_KEY,0,1);
             this.dataManager.sendParameters(KEY_SET_MOUSE_KEY,0,0);
         }
-        else if(this.stepPress === 2 && this.stepMove === 0 && this.stepRelease === 1)
+        else if(this.stepPress === 2 && this.stepMove > 3 && this.stepRelease === 2)//left click
+        {
+            if(this.stepMove < 40)
+            {
+                this.dataManager.sendParameters(KEY_SET_MOUSE_KEY,0,1);
+                this.dataManager.sendParameters(KEY_SET_MOUSE_KEY,0,0);
+            }
+        }
+        else if(this.stepPress === 2 && this.stepMove === 0 && this.stepRelease === 1)//left press
         {
             this.touchTimer = setTimeout(this.touchWaiter.bind(this),200);
             return;
         }
-        else if(this.stepPress === 2 && this.stepMove === 0 && this.stepRelease === 2)
+        else if(this.stepPress === 2 && this.stepMove === 0 && this.stepRelease === 2)//double left click
+        {
+            this.dataManager.sendParameters(KEY_SET_MOUSE_KEY,0,1);
+            this.dataManager.sendParameters(KEY_SET_MOUSE_KEY,0,0);
+            this.dataManager.sendParameters(KEY_SET_MOUSE_KEY,0,1);
+            this.dataManager.sendParameters(KEY_SET_MOUSE_KEY,0,0);
+        }
+        else if(this.stepPress === 3 && this.stepMove > 3 && this.stepRelease === 3)//double left click
         {
             this.dataManager.sendParameters(KEY_SET_MOUSE_KEY,0,1);
             this.dataManager.sendParameters(KEY_SET_MOUSE_KEY,0,0);

@@ -498,7 +498,7 @@ void WebSocketHandler::socketStateChanged(QAbstractSocket::SocketState state)
         {
             if(m_timerReconnect)
                 if(!m_timerReconnect->isActive())
-                    m_timerReconnect->start(1000);
+                    m_timerReconnect->start(5000);
             break;
         }
         case QAbstractSocket::HostLookupState:
@@ -509,7 +509,7 @@ void WebSocketHandler::socketStateChanged(QAbstractSocket::SocketState state)
         {
             if(m_timerReconnect)
                 if(!m_timerReconnect->isActive())
-                    m_timerReconnect->start(1000);
+                    m_timerReconnect->start(5000);
             break;
         }
         case QAbstractSocket::ConnectedState:
@@ -526,7 +526,7 @@ void WebSocketHandler::socketStateChanged(QAbstractSocket::SocketState state)
 
             if(m_timerReconnect)
                 if(!m_timerReconnect->isActive())
-                    m_timerReconnect->start(1000);
+                    m_timerReconnect->start(5000);
 
             break;
         }

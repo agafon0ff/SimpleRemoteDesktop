@@ -56,14 +56,14 @@ void ProxyUnitingClass::loadSettings()
     QString login = settings.value("login").toString();
     if(login.isEmpty())
     {
-        login = "login";
+        login = "sysadmin";
         settings.setValue("login",login);
     }
 
     QString pass = settings.value("pass").toString();
     if(pass.isEmpty())
     {
-        pass = "pass";
+        pass = "12345678";
         settings.setValue("pass",pass);
     }
 
