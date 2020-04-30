@@ -3,6 +3,7 @@
 #include <QApplication>
 #include <QCommonStyle>
 #include <QSettings>
+#include <QHostInfo>
 #include <QThread>
 #include <QDebug>
 #include <QUuid>
@@ -127,7 +128,7 @@ void RemoteDesktopUniting::loadSettings()
     QString name = settings.value("name").toString();
     if(name.isEmpty())
     {
-        name = QUuid::createUuid().toString().mid(1,8);
+        name = QHostInfo::localHostName();
         settings.setValue("name",name);
     }
 
