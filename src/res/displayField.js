@@ -64,6 +64,8 @@ class DisplayField
 
     touchPress(e)
     {
+        e.preventDefault();
+
         if(e.touches.length === 1 && !this.isScaling)
         {
             this.touchX = e.touches[0].pageX;
@@ -76,6 +78,8 @@ class DisplayField
 
     touchMove(e)
     {
+        e.preventDefault();
+
         if(e.touches.length === 1 && !this.isScaling)
         {
             this.stepMove += 1;
@@ -126,6 +130,8 @@ class DisplayField
 
     touchRelease(e)
     {
+        e.preventDefault();
+
         if(!this.isScaling)
         {
             this.stepRelease += 1;
