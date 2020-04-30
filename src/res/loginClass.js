@@ -5,6 +5,8 @@ class LoginClass
         this.loginField = null;
         this.dataManager = null;
         this.nonce = null;
+
+        this.isIphone  = /iPad|iPhone|iPod/i.test(navigator.userAgent);
     }
     
     createLoginHtml()
@@ -92,6 +94,21 @@ class LoginClass
             border: 1px solid #666; \
             border-radius: 5px; \
             letter-spacing: 1px;';
+
+        if(this.isIphone)
+        {
+            cssInput = 'position: absolute; \
+                        font: 16px monospace; \
+                        background: #556; \
+                        color: #fff; \
+                        text-align: center; \
+                        left: 5%; \
+                        width: 85%; \
+                        height: 13%; \
+                        border: 1px solid #666; \
+                        border-radius: 5px; \
+                        letter-spacing: 1px;';
+        }
         
         this.inputLogin = document.createElement('input');
         this.inputLogin.id = 'inputLogin';
