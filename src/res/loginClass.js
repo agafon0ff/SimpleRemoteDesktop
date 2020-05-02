@@ -5,7 +5,6 @@ class LoginClass
         this.loginField = null;
         this.dataManager = null;
         this.nonce = null;
-
         this.isIphone  = /iPad|iPhone|iPod/i.test(navigator.userAgent);
     }
     
@@ -315,8 +314,11 @@ class LoginClass
         if(this.waitLabel)
             return;
 
-        if(event.keyCode == 13)
-            this.btnSubmitClicked();
+        if(event.keyCode === 13)
+        {
+            if(!this.buttonsBox)
+                this.btnSubmitClicked();
+        }
     }
 
     buttonDesktopClicked(uuid)
