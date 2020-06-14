@@ -241,7 +241,6 @@ void WebSocketHandler::setRemoteAuthenticationResponse(const QByteArray &uuid, c
 
 void WebSocketHandler::createProxyConnection(WebSocketHandler *handler, const QByteArray &uuid)
 {
-//    disconnect(m_webSocket, &QWebSocket::binaryMessageReceived,this, &WebSocketHandler::binaryMessageReceived);
     disconnect(handler->getSocket(), &QWebSocket::binaryMessageReceived,handler, &WebSocketHandler::binaryMessageReceived);
 
     connect(m_webSocket, &QWebSocket::binaryMessageReceived, handler->getSocket(), &QWebSocket::sendBinaryMessage);
@@ -281,8 +280,6 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
                 {
                     if(!m_isAuthenticated)
                         m_isAuthenticated = true;
-
-                    sendName(m_name);
                 }
                 else m_isAuthenticated = false;
 
@@ -341,6 +338,7 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
     }
     else if(command == KEY_GET_IMAGE)
     {
+        sendName(m_name);
         emit getDesktop();
     }
     else if(command == KEY_TILE_RECEIVED)
