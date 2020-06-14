@@ -10,12 +10,12 @@ var KEY_SET_AUTH_REQUEST = new Uint8Array([83,65,82,81]); //"SARQ";
 var KEY_CONNECT_UUID = new Uint8Array([67,84,85,85]); //"CTUU";
 var KEY_DEBUG = new Uint8Array([68,66,85,71]); //"DBUG";
 
-
 var KEY_IMAGE_PARAM = "73,77,71,80";//new Uint8Array([73,77,71,80]); //ascii: "IMGP";
 var KEY_IMAGE_TILE = "73,77,71,84";//IMGT
 var KEY_SET_NONCE = "83,84,78,67";//STNC
 var KEY_SET_AUTH_RESPONSE = "83,65,82,80"; //SARP;
 var KEY_CHECK_AUTH_RESPONSE = "67,65,82,80"; //CARP;
+var KEY_SET_NAME = "83,84,78,77"; //STNM;
 
 var PNG_HEADER = new Uint8Array([137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82]);
 
@@ -23,7 +23,7 @@ var COMMAD_SIZE = 4;
 var REQUEST_MIN_SIZE = 6;
 
 class DataManager
-{    
+{
     constructor()
     {
         this.asd = new Uint8Array();
@@ -187,10 +187,17 @@ class DataManager
         {
             var uuid = data.subarray(0,16);
             var name = data.subarray(16,data.length);
-            var nameString = String.fromCharCode.apply(null, name)
+            var nameString = String.fromCharCode.apply(null, name);
 
             if(this.loginClass)
                 this.loginClass.addDesktopButton(uuid, nameString);
+        }
+        else if(command === KEY_SET_NAME)
+        {
+            var titleName = String.fromCharCode.apply(null, data);
+
+            if(titleName)
+                document.title = titleName;
         }
         else console.log("newData:",command.toString(),command,data);
     }

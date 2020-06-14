@@ -281,6 +281,8 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
                 {
                     if(!m_isAuthenticated)
                         m_isAuthenticated = true;
+
+                    sendName(m_name);
                 }
                 else m_isAuthenticated = false;
 

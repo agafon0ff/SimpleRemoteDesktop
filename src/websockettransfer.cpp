@@ -45,6 +45,11 @@ void WebSocketTransfer::setLoginPass(const QString &login, const QString &pass)
     m_pass = pass;
 }
 
+void WebSocketTransfer::setName(const QString &name)
+{
+    m_name = name;
+}
+
 void WebSocketTransfer::setType(int type)
 {
     m_type = type;
@@ -97,6 +102,7 @@ void WebSocketTransfer::setSocketConnected()
         socketHandler->setType(WebSocketHandler::HandlerProxyClient);
 
     socketHandler->setLoginPass(m_login, m_pass);
+    socketHandler->setName(m_name);
     socketHandler->setSocket(webSocket);
     m_sockets.append(socketHandler);
 

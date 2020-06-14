@@ -156,9 +156,9 @@ void RemoteDesktopUniting::loadSettings()
     settings.endGroup();
     settings.sync();
 
-    startHttpServer(static_cast<quint16>(portHttp),filesPath);
-    startWebSocketTransfer(static_cast<quint16>(portWeb),login,pass);
-    startWebSocketHandler(proxyHost,name,login,pass,proxyLogin,proxyPass);
+    startHttpServer(static_cast<quint16>(portHttp), filesPath);
+    startWebSocketTransfer(static_cast<quint16>(portWeb), login, pass, name);
+    startWebSocketHandler(proxyHost, name, login, pass, proxyLogin, proxyPass);
 }
 
 void RemoteDesktopUniting::startHttpServer(quint16 port, const QString &filesPath)
@@ -178,12 +178,13 @@ void RemoteDesktopUniting::startHttpServer(quint16 port, const QString &filesPat
     }
 }
 
-void RemoteDesktopUniting::startWebSocketTransfer(quint16 port, const QString &login, const QString &pass)
+void RemoteDesktopUniting::startWebSocketTransfer(quint16 port, const QString &login, const QString &pass, const QString &name)
 {
     QThread *thread = new QThread;
     m_webSocketTransfer = new WebSocketTransfer;
     m_webSocketTransfer->setType(WebSocketTransfer::TransferWebClients);
     m_webSocketTransfer->setPort(port);
+    m_webSocketTransfer->setName(name);
     m_webSocketTransfer->setLoginPass(login, pass);
 
     connect(thread, &QThread::started, m_webSocketTransfer, &WebSocketTransfer::start);

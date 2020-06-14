@@ -26,6 +26,7 @@ private:
     quint16 m_port;
     QString m_login;
     QString m_pass;
+    QString m_name;
 
     QList<WebSocketHandler*> m_sockets;
 
@@ -40,6 +41,7 @@ public slots:
     void stop();
     void setPort(quint16 port);
     void setLoginPass(const QString &login, const QString &pass);
+    void setName(const QString &name);
     void setType(int type);
     void checkRemoteAuthentication(const QByteArray &uuid, const QByteArray &nonce, const QByteArray &request);
     void setRemoteAuthenticationResponse(const QByteArray &uuidDst, const QByteArray &uuidSrc, const QByteArray &nameSrc);
