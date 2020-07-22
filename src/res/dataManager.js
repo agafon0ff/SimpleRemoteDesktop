@@ -29,6 +29,7 @@ class DataManager
         this.asd = new Uint8Array();
         this.id = "123";
         this.isConnected = false;
+        this.isSessionStarted = false;
         this.dataTmp = new Uint8Array([]);
         
         this.loginClass = null;
@@ -148,6 +149,7 @@ class DataManager
                 if(this.extraKeys)
                     this.extraKeys.createExtraKeysHtml();
                 
+                this.isSessionStarted = true;
                 this.webSocket.send(KEY_GET_IMAGE);
                 console.log("KEY_GET_IMAGE sended");
             }
@@ -155,6 +157,8 @@ class DataManager
             {
                 if(this.loginClass)
                     this.loginClass.showWrongRequest();
+                
+                this.isSessionStarted = false;
             }
             
         }
@@ -164,7 +168,7 @@ class DataManager
             var imageHeight = this.uint16FromArray(data.subarray(2,4));
             var rectWidth = this.uint16FromArray(data.subarray(4,6));
             
-            if(this.displayField)
+            if(this.displayField && !this.isSessionStarted)
                 this.displayField.setImageParameters(imageWidth,imageHeight,rectWidth);
         }
         else if(command === KEY_IMAGE_TILE)
