@@ -168,7 +168,7 @@ class DataManager
             var imageHeight = this.uint16FromArray(data.subarray(2,4));
             var rectWidth = this.uint16FromArray(data.subarray(4,6));
             
-            if(this.displayField && !this.isSessionStarted)
+            if(this.displayField)
                 this.displayField.setImageParameters(imageWidth,imageHeight,rectWidth);
         }
         else if(command === KEY_IMAGE_TILE)
@@ -193,7 +193,7 @@ class DataManager
             var name = data.subarray(16,data.length);
             var nameString = String.fromCharCode.apply(null, name);
 
-            if(this.loginClass)
+            if(this.loginClass && !this.isSessionStarted)
                 this.loginClass.addDesktopButton(uuid, nameString);
         }
         else if(command === KEY_SET_NAME)
