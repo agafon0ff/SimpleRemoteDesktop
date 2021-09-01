@@ -17,7 +17,9 @@ GraberClass::GraberClass(QObject *parent) : QObject(parent),
     m_screenNumber(0),
     m_currentTileNum(0),
     m_receivedTileNum(0),
-    m_permitCounter(0)
+    m_permitCounter(0),
+    m_tileCurrentImage(m_rectSize, m_rectSize, QImage::Format_RGB444),
+    m_tileLastImage(m_rectSize, m_rectSize, QImage::Format_RGB444)
 {
     m_meanCounter.resize(4);
     m_meanCounter.fill(1);
@@ -83,23 +85,23 @@ void GraberClass::updateImage()
         return;
 
     QScreen *screen = QApplication::screens().at(m_screenNumber);
-    QImage currentImage = screen->grabWindow(0).toImage().convertToFormat(QImage::Format_RGB444);
+    m_currentImage = std::move(screen->grabWindow(0).toImage().convertToFormat(QImage::Format_RGB444));
 
-    int columnCount = currentImage.width() / m_rectSize;
-    int rowCount = currentImage.height() / m_rectSize;
+    int columnCount = m_currentImage.width() / m_rectSize;
+    int rowCount = m_currentImage.height() / m_rectSize;
 
-    if(currentImage.width() % m_rectSize > 0)
+    if(m_currentImage.width() % m_rectSize > 0)
         ++columnCount;
 
-    if(currentImage.height() % m_rectSize > 0)
+    if(m_currentImage.height() % m_rectSize > 0)
         ++rowCount;
 
     if(m_lastImage.isNull())
     {
-        m_lastImage = QImage(currentImage.size(),currentImage.format());
+        m_lastImage = QImage(m_currentImage.size(), m_currentImage.format());
         m_lastImage.fill(QColor(Qt::black));
 
-        emit imageParameters(currentImage.size(), m_rectSize);
+        emit imageParameters(m_currentImage.size(), m_rectSize);
     }
 
     quint16 tileNum = 0;
@@ -108,19 +110,19 @@ void GraberClass::updateImage()
     {
         for(int j=0;j<rowCount;++j)
         {
-            QImage image = currentImage.copy(i*m_rectSize, j*m_rectSize, m_rectSize, m_rectSize);
-            QImage lastImage = m_lastImage.copy(i*m_rectSize, j*m_rectSize, m_rectSize, m_rectSize);
+            m_tileCurrentImage = std::move(m_currentImage.copy(i*m_rectSize, j*m_rectSize, m_rectSize, m_rectSize));
+            m_tileLastImage = std::move(m_lastImage.copy(i*m_rectSize, j*m_rectSize, m_rectSize, m_rectSize));
 
-            if(lastImage != image)
+            if(m_tileLastImage != m_tileCurrentImage)
             {
-                sendImage(i,j,tileNum,image);
+                sendImage(i, j, tileNum, m_tileCurrentImage);
                 m_currentTileNum = tileNum;
                 ++tileNum;
             }
         }
     }
 
-    m_lastImage = currentImage;
+    m_lastImage = m_currentImage;
 }
 
 void GraberClass::setReceivedTileNum(quint16 num)
