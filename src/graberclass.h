@@ -37,6 +37,7 @@ private:
     QImage m_lastImage;
     QImage m_tileCurrentImage;
     QImage m_tileLastImage;
+    QByteArray m_dataToSend;
 
     QVector<int> m_meanCounter;
 

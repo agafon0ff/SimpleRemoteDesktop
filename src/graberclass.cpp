@@ -44,7 +44,7 @@ void GraberClass::changeScreenNum()
 {
     QList<QScreen *> screens = QApplication::screens();
 
-    if(screens.size() > m_screenNumber+1)
+    if(screens.size() > m_screenNumber + 1)
         ++m_screenNumber;
     else m_screenNumber = 0;
 
@@ -85,7 +85,7 @@ void GraberClass::updateImage()
         return;
 
     QScreen *screen = QApplication::screens().at(m_screenNumber);
-    m_currentImage = std::move(screen->grabWindow(0).toImage().convertToFormat(QImage::Format_RGB444));
+    m_currentImage = screen->grabWindow(0).toImage().convertToFormat(QImage::Format_RGB444);
 
     int columnCount = m_currentImage.width() / m_rectSize;
     int rowCount = m_currentImage.height() / m_rectSize;
@@ -96,28 +96,34 @@ void GraberClass::updateImage()
     if(m_currentImage.height() % m_rectSize > 0)
         ++rowCount;
 
+    bool sendWithoutCompare = false;
+
     if(m_lastImage.isNull())
     {
         m_lastImage = QImage(m_currentImage.size(), m_currentImage.format());
         m_lastImage.fill(QColor(Qt::black));
 
         emit imageParameters(m_currentImage.size(), m_rectSize);
+        sendWithoutCompare = true;
     }
 
     quint16 tileNum = 0;
 
-    for(int i=0;i<columnCount;++i)
+    for (int j=0; j<rowCount; ++j)
     {
-        for(int j=0;j<rowCount;++j)
+        for (int i=0; i<columnCount; ++i)
         {
-            m_tileCurrentImage = std::move(m_currentImage.copy(i*m_rectSize, j*m_rectSize, m_rectSize, m_rectSize));
-            m_tileLastImage = std::move(m_lastImage.copy(i*m_rectSize, j*m_rectSize, m_rectSize, m_rectSize));
+            m_tileCurrentImage = m_currentImage.copy(i * m_rectSize, j * m_rectSize, m_rectSize, m_rectSize);
 
-            if(m_tileLastImage != m_tileCurrentImage)
+            if (!sendWithoutCompare)
+                m_tileLastImage = m_lastImage.copy(i * m_rectSize, j * m_rectSize, m_rectSize, m_rectSize);
+
+            if(sendWithoutCompare || m_tileLastImage != m_tileCurrentImage)
             {
                 sendImage(i, j, tileNum, m_tileCurrentImage);
                 m_currentTileNum = tileNum;
                 ++tileNum;
+                sendWithoutCompare = tileNum > columnCount;
             }
         }
     }
@@ -133,20 +139,19 @@ void GraberClass::setReceivedTileNum(quint16 num)
 
 void GraberClass::sendImage(int posX, int posY, int tileNum, const QImage &image)
 {
-    QByteArray bArray;
-    QBuffer buffer(&bArray);
+    QBuffer buffer(&m_dataToSend);
     buffer.open(QIODevice::WriteOnly);
     image.save(&buffer, "PNG");
-    bArray.remove(0,PNG_HEADER_SIZE);
+    m_dataToSend.remove(0,PNG_HEADER_SIZE);
 
-    emit imageTile(static_cast<quint16>(posX),static_cast<quint16>(posY),bArray,static_cast<quint16>(tileNum));
+    emit imageTile(static_cast<quint16>(posX),static_cast<quint16>(posY),m_dataToSend,static_cast<quint16>(tileNum));
 }
 
 bool GraberClass::isSendTilePermit()
 {
     bool result = false;
 
-    if(m_currentTileNum <= (m_receivedTileNum))
+    if(m_currentTileNum == m_receivedTileNum)
         result = true;
 
     if(!result)

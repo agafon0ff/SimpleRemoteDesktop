@@ -181,11 +181,9 @@ class DataManager
             
             rawData.set(PNG_HEADER,0);
             rawData.set(data.subarray(6,data.length),PNG_HEADER.length);
-
-            var b64encoded = 'data:image/png;base64,' + btoa(String.fromCharCode.apply(null, rawData));
             
             if(this.displayField)
-                this.displayField.setImageData(posX, posY, b64encoded, tileNum);
+                this.displayField.setImageData(posX, posY, rawData, tileNum);
         }
         else if(command === KEY_CHECK_AUTH_RESPONSE)
         {
