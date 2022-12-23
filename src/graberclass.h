@@ -39,8 +39,6 @@ private:
     QImage m_tileLastImage;
     QByteArray m_dataToSend;
 
-    QVector<int> m_meanCounter;
-
 signals:
     void finished();
     void imageParameters(const QSize &imageSize, int rectWidth);

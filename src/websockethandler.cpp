@@ -23,7 +23,8 @@ static const char* KEY_SET_NAME = "STNM";
 static const char* KEY_CONNECT_UUID = "CTUU";
 static const char* KEY_CONNECTED_PROXY_CLIENT = "CNPC";
 static const char* KEY_DISCONNECTED_PROXY_CLIENT = "DNPC";
-static const char* KEY_PING = "PING";
+static const char* KEY_PING_REQUEST = "PINQ";
+static const char* KEY_PING_RESPONSE = "PINS";
 
 const int COMMAD_SIZE = 4;
 const int REQUEST_MIN_SIZE = 6;
@@ -200,6 +201,8 @@ void WebSocketHandler::sendName(const QByteArray &name)
     m_dataToSend.append(name);
 
     sendBinaryMessage(m_dataToSend);
+
+    qDebug() << "WebSocketHandler::sendName" << name << m_dataToSend;
 }
 
 void WebSocketHandler::checkRemoteAuthentication(const QByteArray &uuid, const QByteArray &nonce, const QByteArray &request)
@@ -226,7 +229,7 @@ void WebSocketHandler::checkRemoteAuthentication(const QByteArray &uuid, const Q
 
 void WebSocketHandler::setRemoteAuthenticationResponse(const QByteArray &uuid, const QByteArray &name)
 {
-    qDebug()<<"WebSocketHandler::setRemoteAuthenticationResponse"<<m_type<<uuid.toBase64()<<name;
+    qDebug() << "WebSocketHandler::setRemoteAuthenticationResponse" << m_type << uuid.toBase64() << name;
 
     stopWaitResponseTimer();
 
@@ -328,7 +331,7 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
         }
         else
         {
-            qDebug()<<"DataParser::newData"<<command<<data;
+            qDebug() << "DataParser::newData" << command << data;
             debugHexData(data);
         }
 
@@ -349,9 +352,9 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
         quint16 tileNum = uint16FromArray(data.data());
         emit receivedTileNum(tileNum);
     }
-    else if (command == KEY_PING)
+    else if (command == KEY_PING_REQUEST)
     {
-
+        sendBinaryMessage(QByteArray(KEY_PING_RESPONSE));
     }
     else if (command == KEY_CHANGE_DISPLAY)
     {
@@ -404,7 +407,7 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
     else if (command == KEY_SET_NAME)
     {
         m_name = data;
-        qDebug()<<"New desktop connected:"<<m_name;
+        qDebug() << "New desktop connected:" << m_name;
     }
     else if (command == KEY_CHECK_AUTH_REQUEST)
     {
@@ -468,7 +471,7 @@ void WebSocketHandler::sendRemoteAuthenticationResponse(const QByteArray &uuid, 
 {
     bool result = request.toBase64() == getHashSum(nonce, m_login, m_pass);
 
-    qDebug()<<"WebSocketHandler::sendRemoteAuthenticationResponse"<<m_type<<uuid.toBase64();
+    qDebug() << "WebSocketHandler::sendRemoteAuthenticationResponse" << m_type << uuid.toBase64();
 
     if (!result)
         return;
@@ -528,6 +531,7 @@ void WebSocketHandler::socketStateChanged(QAbstractSocket::SocketState state)
         {
             qDebug()<<"SocketWeb::socketStateChanged: Disconnected from server.";
             emit connectedStatus(false);
+            emit authenticatedStatus(false);
             m_isAuthenticated = false;
 
             if (m_timerReconnect)

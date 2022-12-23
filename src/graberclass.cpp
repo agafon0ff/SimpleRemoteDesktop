@@ -13,7 +13,7 @@ const int PNG_HEADER_SIZE = 16;
 GraberClass::GraberClass(QObject *parent) : QObject(parent),
     m_grabTimer(Q_NULLPTR),
     m_grabInterval(40),
-    m_rectSize(50),
+    m_rectSize(60),
     m_screenNumber(0),
     m_currentTileNum(0),
     m_receivedTileNum(0),
@@ -21,8 +21,6 @@ GraberClass::GraberClass(QObject *parent) : QObject(parent),
     m_tileCurrentImage(m_rectSize, m_rectSize, QImage::Format_RGB444),
     m_tileLastImage(m_rectSize, m_rectSize, QImage::Format_RGB444)
 {
-    m_meanCounter.resize(4);
-    m_meanCounter.fill(1);
 }
 
 void GraberClass::start()

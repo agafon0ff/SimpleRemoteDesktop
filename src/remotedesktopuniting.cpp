@@ -128,7 +128,7 @@ void RemoteDesktopUniting::loadSettings()
     if(name.isEmpty())
     {
         name = QHostInfo::localHostName();
-        settings.setValue("name",name);
+        settings.setValue("name", name);
     }
 
     QString proxyHost = settings.value("proxyHost").toString();
