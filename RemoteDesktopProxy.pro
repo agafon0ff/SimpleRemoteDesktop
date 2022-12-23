@@ -3,6 +3,8 @@ QT -= gui
 
 CONFIG += c++11 console
 CONFIG -= app_bundle
+QMAKE_LFLAGS += -no-pie
+QMAKE_CXXFLAGS_RELEASE += -O3
 
 INCLUDEPATH += src
 

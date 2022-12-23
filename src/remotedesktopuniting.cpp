@@ -239,7 +239,7 @@ void RemoteDesktopUniting::startWebSocketHandler(const QString &host, const QStr
 
     connect(m_webSocketHandler, &WebSocketHandler::connectedProxyClient, this, &RemoteDesktopUniting::remoteClientConnected);
     connect(m_webSocketHandler, &WebSocketHandler::disconnectedProxyClient, this, &RemoteDesktopUniting::remoteClientDisconnected);
-    connect(m_webSocketHandler, &WebSocketHandler::connectedStatus, this, &RemoteDesktopUniting::connectedToProxyServer);
+    connect(m_webSocketHandler, &WebSocketHandler::authenticatedStatus, this, &RemoteDesktopUniting::connectedToProxyServer);
 
     createConnectionToHandler(m_webSocketHandler);
 
