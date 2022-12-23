@@ -19,7 +19,7 @@ RemoteDesktopUniting::RemoteDesktopUniting(QObject *parent) : QObject(parent),
     m_webSocketTransfer(Q_NULLPTR),
     m_webSocketHandler(Q_NULLPTR),
     m_serverHttp(new ServerHttp(this)),
-    m_graberClass(new GraberClass(this)),
+    m_graberClass(nullptr),
     m_inputSimulator(new InputSimulator(this)),
     m_trayMenu(new QMenu),
     m_trayIcon(new QSystemTrayIcon(this)),
@@ -38,10 +38,9 @@ RemoteDesktopUniting::RemoteDesktopUniting(QObject *parent) : QObject(parent),
 
     connect(m_trayMenu,SIGNAL(triggered(QAction*)),this,SLOT(actionTriggered(QAction*)));
 
+    startGraberClass();
     updateCurrentIp();
     loadSettings();
-
-    m_graberClass->start();
 }
 
 void RemoteDesktopUniting::actionTriggered(QAction *action)
@@ -178,6 +177,24 @@ void RemoteDesktopUniting::startHttpServer(quint16 port, const QString &filesPat
     }
 }
 
+void RemoteDesktopUniting::startGraberClass()
+{
+    QThread *thread = new QThread;
+    m_graberClass = new GraberClass;
+
+    connect(thread, &QThread::started, m_graberClass, &GraberClass::start);
+    connect(this, &RemoteDesktopUniting::closeSignal, m_graberClass, &GraberClass::stop);
+    connect(m_graberClass, &GraberClass::finished, this, &RemoteDesktopUniting::finishedWebSockeTransfer);
+    connect(m_graberClass, &GraberClass::finished, thread, &QThread::quit);
+    connect(thread, &QThread::finished, m_graberClass, &WebSocketTransfer::deleteLater);
+    connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+
+    connect(this, &RemoteDesktopUniting::stopGrabing, m_graberClass, &GraberClass::stopSending);
+
+    m_graberClass->moveToThread(thread);
+    thread->start();
+}
+
 void RemoteDesktopUniting::startWebSocketTransfer(quint16 port, const QString &login, const QString &pass, const QString &name)
 {
     QThread *thread = new QThread;
@@ -281,7 +298,7 @@ void RemoteDesktopUniting::remoteClientDisconnected(const QByteArray &uuid)
         m_remoteClientsList.removeOne(uuid);
 
         if(m_remoteClientsList.size() == 0)
-            m_graberClass->stopSending();
+            emit stopGrabing();
     }
 
     qDebug()<<"RemoteDesktopUniting::remoteClientDisconnected"<<m_remoteClientsList.size();

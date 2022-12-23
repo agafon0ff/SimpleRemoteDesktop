@@ -36,6 +36,7 @@ private:
 
 signals:
     void closeSignal();
+    void stopGrabing();
 
 public slots:
 
@@ -45,6 +46,7 @@ private slots:
     void updateCurrentIp();
     void loadSettings();
     void startHttpServer(quint16 port, const QString &filesPath);
+    void startGraberClass();
     void startWebSocketTransfer(quint16 port, const QString &login, const QString &pass, const QString &name);
     void startWebSocketHandler(const QString &host, const QString &name, const QString &login,
                                const QString &pass, const QString &proxyLogin, const QString &proxyPass);

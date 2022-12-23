@@ -36,7 +36,7 @@ WebSocketHandler::WebSocketHandler(QObject *parent) : QObject(parent),
     m_waitType(WaitTypeUnknown),
     m_isAuthenticated(false)
 {
-
+    m_command.resize(COMMAD_SIZE);
 }
 
 void WebSocketHandler::createSocket()
@@ -104,12 +104,12 @@ void WebSocketHandler::setType(int type)
 
 void WebSocketHandler::setName(const QString &name)
 {
-    m_name = name;
+    m_name = name.toUtf8();
 }
 
 QString WebSocketHandler::getName()
 {
-    return m_name;
+    return QString::fromUtf8(m_name);
 }
 
 QByteArray WebSocketHandler::getUuid()
@@ -144,12 +144,12 @@ void WebSocketHandler::setSocket(QWebSocket *webSocket)
 
     qDebug()<<"WebSocketHandler::setSocket"<<m_type<<m_uuid.toBase64();
 
-    QByteArray data;
-    data.append(KEY_SET_NONCE);
-    data.append(arrayFromUint16(static_cast<quint16>(m_nonce.size())));
-    data.append(m_nonce);
+    m_dataToSend.clear();
+    m_dataToSend.append(KEY_SET_NONCE);
+    appendUint16(m_dataToSend, static_cast<quint16>(m_nonce.size()));
+    m_dataToSend.append(m_nonce);
 
-    sendBinaryMessage(data);
+    sendBinaryMessage(m_dataToSend);
 }
 
 QWebSocket *WebSocketHandler::getSocket()
@@ -162,14 +162,14 @@ void WebSocketHandler::sendImageParameters(const QSize &imageSize, int rectWidth
     if(!m_isAuthenticated)
         return;
 
-    QByteArray data;
-    data.append(KEY_IMAGE_PARAM);
-    data.append(arrayFromUint16(6));
-    data.append(arrayFromUint16(static_cast<quint16>(imageSize.width())));
-    data.append(arrayFromUint16(static_cast<quint16>(imageSize.height())));
-    data.append(arrayFromUint16(static_cast<quint16>(rectWidth)));
+    m_dataToSend.clear();
+    m_dataToSend.append(KEY_IMAGE_PARAM);
+    appendUint16(m_dataToSend, 6);
+    appendUint16(m_dataToSend, static_cast<quint16>(imageSize.width()));
+    appendUint16(m_dataToSend, static_cast<quint16>(imageSize.height()));
+    appendUint16(m_dataToSend, static_cast<quint16>(rectWidth));
 
-    sendBinaryMessage(data);
+    sendBinaryMessage(m_dataToSend);
 }
 
 void WebSocketHandler::sendImageTile(quint16 posX, quint16 posY, const QByteArray &imageData, quint16 tileNum)
@@ -177,29 +177,28 @@ void WebSocketHandler::sendImageTile(quint16 posX, quint16 posY, const QByteArra
     if(!m_isAuthenticated)
         return;
 
-    QByteArray data;
-    data.append(KEY_IMAGE_TILE);
-    data.append(arrayFromUint16(static_cast<quint16>(imageData.size() + 6)));
-    data.append(arrayFromUint16(posX));
-    data.append(arrayFromUint16(posY));
-    data.append(arrayFromUint16(tileNum));
-    data.append(imageData);
+    m_dataToSend.clear();
+    m_dataToSend.append(KEY_IMAGE_TILE);
+    appendUint16(m_dataToSend, static_cast<quint16>(imageData.size() + 6));
+    appendUint16(m_dataToSend, posX);
+    appendUint16(m_dataToSend, posY);
+    appendUint16(m_dataToSend, tileNum);
+    m_dataToSend.append(imageData);
 
-    sendBinaryMessage(data);
+    sendBinaryMessage(m_dataToSend);
 }
 
-void WebSocketHandler::sendName(const QString &name)
+void WebSocketHandler::sendName(const QByteArray &name)
 {
     if(!m_isAuthenticated)
         return;
 
-    QByteArray nameArray = name.toUtf8();
-    QByteArray data;
-    data.append(KEY_SET_NAME);
-    data.append(arrayFromUint16(static_cast<quint16>(nameArray.size())));
-    data.append(nameArray);
+    m_dataToSend.clear();
+    m_dataToSend.append(KEY_SET_NAME);
+    appendUint16(m_dataToSend, static_cast<quint16>(name.size()));
+    m_dataToSend.append(name);
 
-    sendBinaryMessage(data);
+    sendBinaryMessage(m_dataToSend);
 }
 
 void WebSocketHandler::checkRemoteAuthentication(const QByteArray &uuid, const QByteArray &nonce, const QByteArray &request)
@@ -214,14 +213,14 @@ void WebSocketHandler::checkRemoteAuthentication(const QByteArray &uuid, const Q
        request.size() != SIZE_UUID)
         return;
 
-    QByteArray data;
-    data.append(KEY_CHECK_AUTH_REQUEST);
-    data.append(arrayFromUint16(static_cast<quint16>(SIZE_UUID * 3)));
-    data.append(uuid);
-    data.append(nonce);
-    data.append(request);
+    m_dataToSend.clear();
+    m_dataToSend.append(KEY_CHECK_AUTH_REQUEST);
+    appendUint16(m_dataToSend, static_cast<quint16>(SIZE_UUID * 3));
+    m_dataToSend.append(uuid);
+    m_dataToSend.append(nonce);
+    m_dataToSend.append(request);
 
-    sendBinaryMessage(data);
+    sendBinaryMessage(m_dataToSend);
 }
 
 void WebSocketHandler::setRemoteAuthenticationResponse(const QByteArray &uuid, const QByteArray &name)
@@ -230,13 +229,13 @@ void WebSocketHandler::setRemoteAuthenticationResponse(const QByteArray &uuid, c
 
     stopWaitResponseTimer();
 
-    QByteArray data;
-    data.append(KEY_CHECK_AUTH_RESPONSE);
-    data.append(arrayFromUint16(static_cast<quint16>(SIZE_UUID + name.size())));
-    data.append(uuid);
-    data.append(name);
+    m_dataToSend.clear();
+    m_dataToSend.append(KEY_CHECK_AUTH_RESPONSE);
+    appendUint16(m_dataToSend, static_cast<quint16>(SIZE_UUID + name.size()));
+    m_dataToSend.append(uuid);
+    m_dataToSend.append(name);
 
-    sendBinaryMessage(data);
+    sendBinaryMessage(m_dataToSend);
 }
 
 void WebSocketHandler::createProxyConnection(WebSocketHandler *handler, const QByteArray &uuid)
@@ -250,20 +249,20 @@ void WebSocketHandler::createProxyConnection(WebSocketHandler *handler, const QB
     connect(this, &WebSocketHandler::proxyConnectionCreated, handler, &WebSocketHandler::sendAuthenticationResponse);
     emit proxyConnectionCreated(true);
 
-    QByteArray data;
-    data.append(KEY_CONNECTED_PROXY_CLIENT);
-    data.append(arrayFromUint16(static_cast<quint16>(uuid.size())));
-    data.append(uuid);
-    sendBinaryMessage(data);
+    m_dataToSend.clear();
+    m_dataToSend.append(KEY_CONNECTED_PROXY_CLIENT);
+    appendUint16(m_dataToSend, static_cast<quint16>(uuid.size()));
+    m_dataToSend.append(uuid);
+    sendBinaryMessage(m_dataToSend);
 }
 
 void WebSocketHandler::proxyHandlerDisconnected(const QByteArray &uuid)
 {
-    QByteArray data;
-    data.append(KEY_DISCONNECTED_PROXY_CLIENT);
-    data.append(arrayFromUint16(static_cast<quint16>(uuid.size())));
-    data.append(uuid);
-    sendBinaryMessage(data);
+    m_dataToSend.clear();
+    m_dataToSend.append(KEY_DISCONNECTED_PROXY_CLIENT);
+    appendUint16(m_dataToSend, static_cast<quint16>(uuid.size()));
+    m_dataToSend.append(uuid);
+    sendBinaryMessage(m_dataToSend);
 }
 
 void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data)
@@ -306,14 +305,17 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
         }
         else if(command == KEY_SET_AUTH_RESPONSE)
         {
-            bool authState = uint16FromArray(data);
+            bool authState = uint16FromArray(data.data());
 
             if(m_type == HandlerSingleClient && authState)
             {
                 m_isAuthenticated = true;
                 sendName(m_name);
             }
-            else m_isAuthenticated = false;
+            else
+            {
+                m_isAuthenticated = false;
+            }
 
             emit authenticatedStatus(m_isAuthenticated);
 
@@ -343,7 +345,7 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
     }
     else if(command == KEY_TILE_RECEIVED)
     {
-        quint16 tileNum = uint16FromArray(data.mid(0,2));
+        quint16 tileNum = uint16FromArray(data.data());
         emit receivedTileNum(tileNum);
     }
     else if(command == KEY_CHANGE_DISPLAY)
@@ -354,8 +356,8 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
     {
         if(data.size() >= 4)
         {
-            quint16 posX = uint16FromArray(data.mid(0,2));
-            quint16 posY = uint16FromArray(data.mid(2,2));
+            quint16 posX = uint16FromArray(data.data());
+            quint16 posY = uint16FromArray(data.data() + 2);
             emit setMouseMove(posX, posY);
         }
     }
@@ -363,8 +365,8 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
     {
         if(data.size() >= 4)
         {
-            qint16 deltaX = static_cast<qint16>(uint16FromArray(data.mid(0,2)));
-            qint16 deltaY = static_cast<qint16>(uint16FromArray(data.mid(2,2)));
+            qint16 deltaX = static_cast<qint16>(uint16FromArray(data.data()));
+            qint16 deltaY = static_cast<qint16>(uint16FromArray(data.data() + 2));
             emit setMouseDelta(deltaX, deltaY);
         }
     }
@@ -372,8 +374,8 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
     {
         if(data.size() >= 4)
         {
-            quint16 keyCode = uint16FromArray(data.mid(0,2));
-            quint16 keyState = uint16FromArray(data.mid(2,2));
+            quint16 keyCode = uint16FromArray(data.data());
+            quint16 keyState = uint16FromArray(data.data() + 2);
             emit setKeyPressed(keyCode,static_cast<bool>(keyState));
         }
     }
@@ -381,8 +383,8 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
     {
         if(data.size() >= 4)
         {
-            quint16 keyCode = uint16FromArray(data.mid(0,2));
-            quint16 keyState = uint16FromArray(data.mid(2,2));
+            quint16 keyCode = uint16FromArray(data.data());
+            quint16 keyState = uint16FromArray(data.data() + 2);
             emit setMousePressed(keyCode,static_cast<bool>(keyState));
         }
     }
@@ -390,13 +392,13 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
     {
         if(data.size() >= 4)
         {
-            quint16 keyState = uint16FromArray(data.mid(2,2));
+            quint16 keyState = uint16FromArray(data.data() + 2);
             emit setWheelChanged(static_cast<bool>(keyState));
         }
     }
     else if(command == KEY_SET_NAME)
     {
-        m_name = QString::fromUtf8(data);
+        m_name = data;
         qDebug()<<"New desktop connected:"<<m_name;
     }
     else if(command == KEY_CHECK_AUTH_REQUEST)
@@ -415,9 +417,8 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
         if(data.size() == SIZE_UUID + 2)
         {
             QByteArray uuid = data.mid(0, SIZE_UUID);
-            quint16 authResponse = uint16FromArray(data.mid(SIZE_UUID, 2));
-            QByteArray nameUtf8 = m_name.toUtf8();
-            emit remoteAuthenticationResponse(uuid, m_uuid, nameUtf8, static_cast<bool>(authResponse));
+            quint16 authResponse = uint16FromArray(data.data() + SIZE_UUID);
+            emit remoteAuthenticationResponse(uuid, m_uuid, m_name, static_cast<bool>(authResponse));
         }
     }
     else if(command == KEY_CONNECTED_PROXY_CLIENT)
@@ -438,21 +439,21 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
 void WebSocketHandler::sendAuthenticationRequestToProxy()
 {
     QByteArray hashSum = QByteArray::fromBase64(getHashSum(m_nonce, m_proxyLogin, m_proxyPass));
-    QByteArray data;
-    data.append(KEY_SET_AUTH_REQUEST);
-    data.append(arrayFromUint16(static_cast<quint16>(hashSum.size())));
-    data.append(hashSum);
-    sendBinaryMessage(data);
+    m_dataToSend.clear();
+    m_dataToSend.append(KEY_SET_AUTH_REQUEST);
+    appendUint16(m_dataToSend, static_cast<quint16>(hashSum.size()));
+    m_dataToSend.append(hashSum);
+    sendBinaryMessage(m_dataToSend);
 }
 
 void WebSocketHandler::sendAuthenticationResponse(bool state)
 {
-    QByteArray data;
-    data.append(KEY_SET_AUTH_RESPONSE);
-    data.append(arrayFromUint16(2));
-    data.append(arrayFromUint16(static_cast<quint16>(state)));
+    m_dataToSend.clear();
+    m_dataToSend.append(KEY_SET_AUTH_RESPONSE);
+    appendUint16(m_dataToSend, 2);
+    appendUint16(m_dataToSend, static_cast<quint16>(state));
 
-    sendBinaryMessage(data);
+    sendBinaryMessage(m_dataToSend);
 
     WebSocketHandler *handler = static_cast<WebSocketHandler*>(sender());
     disconnect(handler, &WebSocketHandler::proxyConnectionCreated, this, &WebSocketHandler::sendAuthenticationResponse);
@@ -472,13 +473,13 @@ void WebSocketHandler::sendRemoteAuthenticationResponse(const QByteArray &uuid, 
        request.size() != SIZE_UUID)
         return;
 
-    QByteArray data;
-    data.append(KEY_CHECK_AUTH_RESPONSE);
-    data.append(arrayFromUint16(static_cast<quint16>(SIZE_UUID + 2)));
-    data.append(uuid);
-    data.append(arrayFromUint16(static_cast<quint16>(result)));
+    m_dataToSend.clear();
+    m_dataToSend.append(KEY_CHECK_AUTH_RESPONSE);
+    appendUint16(m_dataToSend, static_cast<quint16>(SIZE_UUID + 2));
+    m_dataToSend.append(uuid);
+    appendUint16(m_dataToSend, static_cast<quint16>(result));
 
-    sendBinaryMessage(data);
+    sendBinaryMessage(m_dataToSend);
 }
 
 QByteArray WebSocketHandler::getHashSum(const QByteArray &nonce, const QString &login, const QString &pass)
@@ -557,15 +558,16 @@ void WebSocketHandler::textMessageReceived(const QString &message)
 
 void WebSocketHandler::binaryMessageReceived(const QByteArray &data)
 {
-    QByteArray activeBuf = m_dataTmp;
-    activeBuf.append(data);
+    m_dataReceived = m_dataTmp;
+    m_dataReceived.append(data);
     m_dataTmp.clear();
+    m_payload.clear();
 
-    int size = activeBuf.size();
+    int size = m_dataReceived.size();
 
     if(size == COMMAD_SIZE)
     {
-        newData(data, QByteArray());
+        newData(data, m_payload);
         return;
     }
 
@@ -576,25 +578,26 @@ void WebSocketHandler::binaryMessageReceived(const QByteArray &data)
 
     for(int i=0;i<size;++i)
     {
-        QByteArray command = activeBuf.mid(dataStep, COMMAD_SIZE);
-        quint16 dataSize = uint16FromArray(activeBuf.mid(dataStep + COMMAD_SIZE, 2));
+        m_command.setRawData(m_dataReceived.data(), COMMAD_SIZE);
+        quint16 dataSize = uint16FromArray(m_dataReceived.data() + COMMAD_SIZE);
 
         if(size >= (dataStep + COMMAD_SIZE + dataSize))
         {
-            QByteArray payload = activeBuf.mid(dataStep + COMMAD_SIZE + 2, dataSize);
+            m_payload.resize(dataSize);
+            m_payload.setRawData(m_dataReceived.data() + dataStep + COMMAD_SIZE + 2, dataSize);
             dataStep += COMMAD_SIZE + 2 + dataSize;
-            newData(command, payload);
+            newData(m_command, m_payload);
 
             i = dataStep;
         }
         else
         {
-            debugHexData(activeBuf);
+            debugHexData(m_dataReceived);
 
-            m_dataTmp = activeBuf.mid(dataStep, size - dataStep);
-
-            if(m_dataTmp.size() > 2000)
-                m_dataTmp.clear();
+            if (size - dataStep < 2000) {
+                m_dataTmp.resize(size - dataStep);
+                m_dataTmp.setRawData(m_dataReceived.data() + dataStep, m_dataTmp.size());
+            }
 
             break;
         }
@@ -662,23 +665,18 @@ void WebSocketHandler::debugHexData(const QByteArray &data)
     qDebug()<<"DataParser::debugHexData:"<<textHex<<data;
 }
 
-QByteArray WebSocketHandler::arrayFromUint16(quint16 number)
+void WebSocketHandler::appendUint16(QByteArray &data, quint16 number)
 {
-    QByteArray buf;
-    buf.resize(2);
-    buf[0] = static_cast<char>(number);
-    buf[1] = static_cast<char>(number >> 8);
-    return buf;
+    int size = data.size();
+    data.resize(size + 2);
+    data[size] = static_cast<char>(number);
+    data[size + 1] = static_cast<char>(number >> 8);
 }
 
-quint16 WebSocketHandler::uint16FromArray(const QByteArray &buf)
+quint16 WebSocketHandler::uint16FromArray(const char* buf)
 {
-    if(buf.count() == 2)
-    {
-        quint16 m_number;
-        m_number = static_cast<quint16>(static_cast<quint8>(buf[0]) |
-                static_cast<quint8>(buf[1]) << 8);
-        return m_number;
-    }
-    else return 0x0000;
+    quint16 m_number;
+    m_number = static_cast<quint16>(static_cast<quint8>(buf[0]) |
+            static_cast<quint8>(buf[1]) << 8);
+    return m_number;
 }

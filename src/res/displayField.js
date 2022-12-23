@@ -253,10 +253,10 @@ class DisplayField
     {
         event.preventDefault();
 
-        if(event.type == 'mouseup')
+        if(event.type === 'mouseup')
             this.dataManager.sendParameters(KEY_SET_MOUSE_KEY,event.button,0);
 
-        else if(event.type == 'mousedown')
+        else if(event.type === 'mousedown')
             this.dataManager.sendParameters(KEY_SET_MOUSE_KEY,event.button,1);
     }
 
@@ -285,7 +285,7 @@ class DisplayField
         event.preventDefault();
         var state = 0;
         
-        if(event.type == 'keydown')
+        if(event.type === 'keydown')
             state = 1;
         
         this.dataManager.sendParameters(KEY_SET_KEY_STATE,event.keyCode,state);
@@ -305,7 +305,8 @@ class DisplayField
         this.width = window.innerWidth;
         this.height = window.innerHeight;
         var fieldHeight = this.height;
-        
+        var rect;
+
         if(this.keyboard.style.visibility === "visible")
         {
             if(this.width < this.height)
@@ -322,8 +323,6 @@ class DisplayField
             keyboard.style.height = rect.h + "px";
             fieldHeight -= rect.h;
         }
-
-        var rect;
 
         if(this.width < this.canvas.width || this.height < this.canvas.height)
         {
@@ -411,11 +410,12 @@ class DisplayField
         }
     }
     
-    setImageData(posX, posY, b64data, tileNum)
+    setImageData(posX, posY, data, tileNum)
     {
         if(!this.ctx)
             return;
-        
+
+        const blob = new Blob([data]);
         var image = new Image();
         image.posX = posX * this.rectWidth;
         image.posY = posY * this.rectWidth;
@@ -424,14 +424,16 @@ class DisplayField
         image.width = this.rectWidth;
         image.height = this.rectWidth;
         image.tileNum = tileNum;
+        image.url = URL.createObjectURL(blob);
 
         image.onload = function()
         {
             this.ctx.drawImage(this, this.posX, this.posY, this.width, this.height);
             this.dataManager.sendParameters(KEY_TILE_RECEIVED,this.tileNum,0);
+            URL.revokeObjectURL( this.url );
         }
 
-        image.src = b64data;
+        image.src = image.url;
     }
     
     createCanvas()

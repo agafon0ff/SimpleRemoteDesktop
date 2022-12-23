@@ -155,18 +155,18 @@ QByteArray ServerHttp::createHeader(const QString &path, int dataSize, const QSt
     type += "; charset=utf-8\r\n";
 
     QByteArray length = "Content-Length: ";
-    length.append(QString::number(dataSize));
+    length.append(QByteArray::number(dataSize));
     length.append("\r\n");
 
     QByteArray date = "Date: ";
     QDateTime dt =  QDateTime::currentDateTime();
     QLocale locale {QLocale(QLocale::English)};
-    date.append(locale.toString(dt, "ddd, dd MMM yyyy hh:mm:ss"));
+    date.append(locale.toString(dt, "ddd, dd MMM yyyy hh:mm:ss").toUtf8());
     date.append(" GMT\r\n");
 
     QByteArray cookie;
-    foreach(QString oneCookie, cookies)
-        cookie.append("Set-Cookie: " + oneCookie + "\r\n");
+    foreach(const QString &oneCookie, cookies)
+        cookie.append("Set-Cookie: " + oneCookie.toUtf8() + "\r\n");
 
     QByteArray result;
     result.append("HTTP/1.1 ");
