@@ -36,7 +36,7 @@ private:
     int m_waitType;
     bool m_isAuthenticated;
     QString m_url;
-    QString m_name;
+    QByteArray m_name;
 
     QString m_login;
     QString m_pass;
@@ -47,6 +47,10 @@ private:
     QByteArray m_dataTmp;
     QByteArray m_uuid;
     QByteArray m_nonce;
+    QByteArray m_command;
+    QByteArray m_payload;
+    QByteArray m_dataToSend;
+    QByteArray m_dataReceived;
 
 signals:
     void finished();
@@ -91,7 +95,7 @@ public slots:
     void sendImageParameters(const QSize &imageSize, int rectWidth);
     void sendImageTile(quint16 posX, quint16 posY,
                        const QByteArray &imageData, quint16 tileNum);
-    void sendName(const QString &name);
+    void sendName(const QByteArray &name);
     void checkRemoteAuthentication(const QByteArray &uuid, const QByteArray &nonce, const QByteArray &request);
     void setRemoteAuthenticationResponse(const QByteArray &uuid, const QByteArray &name);
     void createProxyConnection(WebSocketHandler *handler, const QByteArray &uuid);
@@ -117,8 +121,8 @@ private slots:
     void debugHexData(const QByteArray &data);
 
 public:
-    static QByteArray arrayFromUint16(quint16 number);
-    static quint16 uint16FromArray(const QByteArray &buf);
+    static void appendUint16(QByteArray &data, quint16 number);
+    static quint16 uint16FromArray(const char *buf);
 };
 
 #endif // WEBSOCKETHANDLER_H
