@@ -63,7 +63,7 @@ void WebSocketTransfer::checkRemoteAuthentication(const QByteArray &uuid, const 
 
 void WebSocketTransfer::setRemoteAuthenticationResponse(const QByteArray &uuidDst, const QByteArray &uuidSrc, const QByteArray &nameSrc)
 {
-    qDebug()<<"WebSocketTransfer::setRemoteAuthenticationResponse dst:"<<uuidDst.toBase64()<<"src:"<<uuidSrc.toBase64();
+    qDebug()<<"WebSocketTransfer::setRemoteAuthenticationResponse:" << uuidDst.toBase64() << uuidSrc.toBase64() << nameSrc;
 
     foreach(WebSocketHandler *socketHandler, m_sockets)
     {
