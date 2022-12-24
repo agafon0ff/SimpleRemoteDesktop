@@ -203,6 +203,7 @@ void WebSocketHandler::sendName(const QByteArray &name)
     sendBinaryMessage(m_dataToSend);
 
     qDebug() << "WebSocketHandler::sendName" << name << m_dataToSend;
+    debugHexData(m_dataToSend);
 }
 
 void WebSocketHandler::checkRemoteAuthentication(const QByteArray &uuid, const QByteArray &nonce, const QByteArray &request)
@@ -407,7 +408,8 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
     else if (command == KEY_SET_NAME)
     {
         m_name.fromUtf8(data);
-        qDebug() << this << "New desktop connected:" << m_name;
+        qDebug() << this << "New desktop connected:" << m_name << data.size() << data;
+        debugHexData(data);
     }
     else if (command == KEY_CHECK_AUTH_REQUEST)
     {
