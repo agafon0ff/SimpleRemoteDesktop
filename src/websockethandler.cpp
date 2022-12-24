@@ -407,15 +407,15 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
     else if (command == KEY_SET_NAME)
     {
         m_name = data;
-        qDebug() << "New desktop connected:" << m_name;
+        qDebug() << this << "New desktop connected:" << m_name;
     }
     else if (command == KEY_CHECK_AUTH_REQUEST)
     {
         if (data.size() == SIZE_UUID * 3)
         {
-            QByteArray uuid = data.mid(0, SIZE_UUID);
-            QByteArray nonce = data.mid(SIZE_UUID, SIZE_UUID);
-            QByteArray requset = data.mid(SIZE_UUID * 2, SIZE_UUID);
+            const QByteArray &uuid = data.mid(0, SIZE_UUID);
+            const QByteArray &nonce = data.mid(SIZE_UUID, SIZE_UUID);
+            const QByteArray &requset = data.mid(SIZE_UUID * 2, SIZE_UUID);
 
             sendRemoteAuthenticationResponse(uuid, nonce, requset);
         }
@@ -424,8 +424,10 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
     {
         if (data.size() == SIZE_UUID + 2)
         {
-            QByteArray uuid = data.mid(0, SIZE_UUID);
+            const QByteArray &uuid = data.mid(0, SIZE_UUID);
             quint16 authResponse = uint16FromArray(data.data() + SIZE_UUID);
+
+            qDebug() << this << "remoteAuthenticationResponse:" << uuid.toBase64() << m_uuid.toBase64() << m_name;
             emit remoteAuthenticationResponse(uuid, m_uuid, m_name, static_cast<bool>(authResponse));
         }
     }
