@@ -106,12 +106,12 @@ void WebSocketHandler::setType(int type)
 
 void WebSocketHandler::setName(const QString &name)
 {
-    m_name = name.toUtf8();
+    m_name = name;
 }
 
 QString WebSocketHandler::getName()
 {
-    return QString::fromUtf8(m_name);
+    return m_name;
 }
 
 QByteArray WebSocketHandler::getUuid()
@@ -314,7 +314,7 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
             if (m_type == HandlerSingleClient && authState)
             {
                 m_isAuthenticated = true;
-                sendName(m_name);
+                sendName(m_name.toUtf8());
             }
             else
             {
@@ -344,7 +344,7 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
     }
     else if (command == KEY_GET_IMAGE)
     {
-        sendName(m_name);
+        sendName(m_name.toUtf8());
         emit getDesktop();
     }
     else if (command == KEY_TILE_RECEIVED)
@@ -406,7 +406,7 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
     }
     else if (command == KEY_SET_NAME)
     {
-        m_name = data;
+        m_name.fromUtf8(data);
         qDebug() << this << "New desktop connected:" << m_name;
     }
     else if (command == KEY_CHECK_AUTH_REQUEST)
@@ -428,7 +428,7 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
             quint16 authResponse = uint16FromArray(data.data() + SIZE_UUID);
 
             qDebug() << this << "remoteAuthenticationResponse:" << uuid.toBase64() << m_uuid.toBase64() << m_name;
-            emit remoteAuthenticationResponse(uuid, m_uuid, m_name, static_cast<bool>(authResponse));
+            emit remoteAuthenticationResponse(uuid, m_uuid, m_name.toUtf8(), static_cast<bool>(authResponse));
         }
     }
     else if (command == KEY_CONNECTED_PROXY_CLIENT)

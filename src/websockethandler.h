@@ -36,7 +36,7 @@ private:
     int m_waitType;
     bool m_isAuthenticated;
     QString m_url;
-    QByteArray m_name;
+    QString m_name;
 
     QString m_login;
     QString m_pass;
