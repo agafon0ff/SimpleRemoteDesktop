@@ -407,7 +407,7 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
     }
     else if (command == KEY_SET_NAME)
     {
-        m_name.fromUtf8(data);
+        m_name = QString::fromUtf8(data);
         qDebug() << this << "New desktop connected:" << m_name << data.size() << data;
         debugHexData(data);
     }
