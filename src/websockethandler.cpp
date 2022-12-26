@@ -201,9 +201,6 @@ void WebSocketHandler::sendName(const QByteArray &name)
     m_dataToSend.append(name);
 
     sendBinaryMessage(m_dataToSend);
-
-    qDebug() << "WebSocketHandler::sendName" << name << m_dataToSend;
-    debugHexData(m_dataToSend);
 }
 
 void WebSocketHandler::checkRemoteAuthentication(const QByteArray &uuid, const QByteArray &nonce, const QByteArray &request)
@@ -280,20 +277,14 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
         {
             if (m_type == HandlerWebClient || m_type == HandlerDesktop)
             {
-                if (data.toBase64() == getHashSum(m_nonce, m_login, m_pass))
-                {
-                    if (!m_isAuthenticated)
-                        m_isAuthenticated = true;
-                }
-                else m_isAuthenticated = false;
-
+                m_isAuthenticated = data.toBase64() == getHashSum(m_nonce, m_login, m_pass);
                 sendAuthenticationResponse(m_isAuthenticated);
-                qDebug()<<"Authentication attempt: "<<m_isAuthenticated;
+                qDebug() << "Authentication attempt: " << m_isAuthenticated;
             }
             else if (m_type == HandlerProxyClient)
             {
                 emit remoteAuthenticationRequest(m_uuid, m_nonce, data);
-                startWaitResponseTimer(5000,WaitTypeRemoteAuth);
+                startWaitResponseTimer(5000, WaitTypeRemoteAuth);
             }
 
             return;
@@ -408,8 +399,7 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
     else if (command == KEY_SET_NAME)
     {
         m_name = QString::fromUtf8(data);
-        qDebug() << this << "New desktop connected:" << m_name << data.size() << data;
-        debugHexData(data);
+        qDebug() << this << "New desktop connected:" << m_name;
     }
     else if (command == KEY_CHECK_AUTH_REQUEST)
     {
@@ -428,8 +418,6 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
         {
             const QByteArray &uuid = data.mid(0, SIZE_UUID);
             quint16 authResponse = uint16FromArray(data.data() + SIZE_UUID);
-
-            qDebug() << this << "remoteAuthenticationResponse:" << uuid.toBase64() << m_uuid.toBase64() << m_name;
             emit remoteAuthenticationResponse(uuid, m_uuid, m_name.toUtf8(), static_cast<bool>(authResponse));
         }
     }
