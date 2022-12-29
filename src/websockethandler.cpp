@@ -48,6 +48,9 @@ void WebSocketHandler::createSocket()
     if (m_webSocket)
         return;
 
+    if (!QUrl(m_url).isValid())
+        return;
+
     m_webSocket = new QWebSocket("",QWebSocketProtocol::VersionLatest,this);
     connect(m_webSocket, &QWebSocket::stateChanged, this, &WebSocketHandler::socketStateChanged);
     connect(m_webSocket, &QWebSocket::textMessageReceived,this, &WebSocketHandler::textMessageReceived);
@@ -98,7 +101,7 @@ void WebSocketHandler::removeSocket()
 void WebSocketHandler::setUrl(const QString &url)
 {
     m_url = url;
-    qDebug()<<"WebSocketHandler::setUrl"<<url<<QUrl(url).isValid();
+    qDebug() << "WebSocketHandler::setUrl" << url << QUrl(url).isValid();
 }
 
 void WebSocketHandler::setType(int type)

@@ -132,10 +132,10 @@ void RemoteDesktopUniting::loadSettings()
     }
 
     QString proxyHost = settings.value("proxyHost").toString();
-    if(proxyHost.isEmpty())
+    if (proxyHost.isEmpty())
     {
-        proxyHost = "ws://asv.fvds.ru:8082";
-        settings.setValue("proxyHost",proxyHost);
+        proxyHost = "ws://<your.proxy.address>:8082";
+        settings.setValue("proxyHost", proxyHost);
     }
 
     QString proxyLogin = settings.value("proxyLogin").toString();
