@@ -288,7 +288,7 @@ void RemoteDesktopUniting::remoteClientConnected(const QByteArray &uuid)
     if(!m_remoteClientsList.contains(uuid))
         m_remoteClientsList.append(uuid);
 
-    qDebug()<<"RemoteDesktopUniting::m_remoteClientsList"<<m_remoteClientsList.size();
+    qDebug()<<"RemoteDesktopUniting remote client count:" << m_remoteClientsList.size();
 }
 
 void RemoteDesktopUniting::remoteClientDisconnected(const QByteArray &uuid)
@@ -301,7 +301,7 @@ void RemoteDesktopUniting::remoteClientDisconnected(const QByteArray &uuid)
             emit stopGrabing();
     }
 
-    qDebug()<<"RemoteDesktopUniting::remoteClientDisconnected"<<m_remoteClientsList.size();
+    qDebug()<<"RemoteDesktopUniting remoteClientDisconnected, count:" << m_remoteClientsList.size();
 }
 
 void RemoteDesktopUniting::connectedToProxyServer(bool state)

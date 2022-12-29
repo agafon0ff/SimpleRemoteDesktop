@@ -218,7 +218,7 @@ void ServerHttp::readDataFromSocket()
     QRegularExpression re;
 
     if(list.last().size() > 0)
-        requestData.append(list.last());
+        requestData.append(list.last().toUtf8());
 
     foreach (QString line, list)
     {

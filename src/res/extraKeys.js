@@ -2,7 +2,6 @@ class ExtraKeys
 {
     constructor()
     {
-        this.id = "~456";
         this.dataManager = null;
         this.displayField = null;
     }

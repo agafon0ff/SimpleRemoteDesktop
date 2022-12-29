@@ -2,7 +2,6 @@ class DisplayField
 {
     constructor()
     {
-        this.id = '123';
         this.dataManager = null;
         this.keyPressedList = [];
         this.rectWidth = 100;
