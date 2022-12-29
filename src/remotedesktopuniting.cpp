@@ -23,6 +23,7 @@ RemoteDesktopUniting::RemoteDesktopUniting(QObject *parent) : QObject(parent),
     m_inputSimulator(new InputSimulator(this)),
     m_trayMenu(new QMenu),
     m_trayIcon(new QSystemTrayIcon(this)),
+    m_title("SimpleRemoteDesktop v1.1"),
     m_currentIp("127.0.0.1"),
     m_currentPort(8080),
     m_isConnectedToProxy(false)
@@ -33,7 +34,7 @@ RemoteDesktopUniting::RemoteDesktopUniting(QObject *parent) : QObject(parent),
 
     m_trayIcon->setContextMenu(m_trayMenu);
     m_trayIcon->setIcon(QIcon(":/res/favicon.ico"));
-    m_trayIcon->setToolTip("SimpleRemoteDesktop");
+    m_trayIcon->setToolTip(m_title);
     m_trayIcon->show();
 
     connect(m_trayMenu,SIGNAL(triggered(QAction*)),this,SLOT(actionTriggered(QAction*)));
@@ -61,7 +62,7 @@ void RemoteDesktopUniting::showInfoMessage()
         message.append("true.");
     else message.append("false :(");
 
-    m_trayIcon->showMessage("SimpleRemoteDesktop", message,
+    m_trayIcon->showMessage(m_title, message,
                             QSystemTrayIcon::Information);
 }
 
@@ -172,7 +173,7 @@ void RemoteDesktopUniting::startHttpServer(quint16 port, const QString &filesPat
     }
     else
     {
-        m_trayIcon->showMessage("SimpleRemoteDesktop","Failed to start on port: " +
+        m_trayIcon->showMessage(m_title, "Failed to start on port: " +
                                 QString::number(port) + "!",QSystemTrayIcon::Critical,5000);
     }
 }
