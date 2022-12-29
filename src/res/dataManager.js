@@ -1,21 +1,23 @@
-var KEY_GET_IMAGE = new Uint8Array([71,73,77,71]); //ascii: "GIMG"
-var KEY_SET_CURSOR_POS = new Uint8Array([83,67,85,80]); //SCUP
-var KEY_SET_CURSOR_DELTA = new Uint8Array([83,67,85,68]); //SCUD
-var KEY_SET_MOUSE_KEY = new Uint8Array([83,77,75,83]); //SMKS
-var KEY_SET_MOUSE_WHEEL = new Uint8Array([83,77,87,72]); //SMWH
-var KEY_SET_KEY_STATE = new Uint8Array([83,75,83,84]); //"SKST";
-var KEY_CHANGE_DISPLAY = new Uint8Array([67,72,68,80]); //"CHDP";
-var KEY_TILE_RECEIVED = new Uint8Array([84,76,82,68]); //"TLRD";
-var KEY_SET_AUTH_REQUEST = new Uint8Array([83,65,82,81]); //"SARQ";
-var KEY_CONNECT_UUID = new Uint8Array([67,84,85,85]); //"CTUU";
-var KEY_DEBUG = new Uint8Array([68,66,85,71]); //"DBUG";
+var KEY_GET_IMAGE = new Uint8Array([71,73,77,71]);          //GIMG
+var KEY_SET_CURSOR_POS = new Uint8Array([83,67,85,80]);     //SCUP
+var KEY_SET_CURSOR_DELTA = new Uint8Array([83,67,85,68]);   //SCUD
+var KEY_SET_MOUSE_KEY = new Uint8Array([83,77,75,83]);      //SMKS
+var KEY_SET_MOUSE_WHEEL = new Uint8Array([83,77,87,72]);    //SMWH
+var KEY_SET_KEY_STATE = new Uint8Array([83,75,83,84]);      //SKST
+var KEY_CHANGE_DISPLAY = new Uint8Array([67,72,68,80]);     //CHDP
+var KEY_TILE_RECEIVED = new Uint8Array([84,76,82,68]);      //TLRD
+var KEY_SET_AUTH_REQUEST = new Uint8Array([83,65,82,81]);   //SARQ
+var KEY_CONNECT_UUID = new Uint8Array([67,84,85,85]);       //CTUU
+var KEY_DEBUG = new Uint8Array([68,66,85,71]);              //DBUG
+var KEY_PING_REQUEST = new Uint8Array([80,73,78,81]);       //PINQ
 
-var KEY_IMAGE_PARAM = "73,77,71,80";//new Uint8Array([73,77,71,80]); //ascii: "IMGP";
-var KEY_IMAGE_TILE = "73,77,71,84";//IMGT
-var KEY_SET_NONCE = "83,84,78,67";//STNC
-var KEY_SET_AUTH_RESPONSE = "83,65,82,80"; //SARP;
-var KEY_CHECK_AUTH_RESPONSE = "67,65,82,80"; //CARP;
-var KEY_SET_NAME = "83,84,78,77"; //STNM;
+var KEY_IMAGE_PARAM = "73,77,71,80";        //IMGP
+var KEY_IMAGE_TILE = "73,77,71,84";         //IMGT
+var KEY_SET_NONCE = "83,84,78,67";          //STNC
+var KEY_SET_AUTH_RESPONSE = "83,65,82,80";  //SARP
+var KEY_CHECK_AUTH_RESPONSE = "67,65,82,80";//CARP
+var KEY_SET_NAME = "83,84,78,77";           //STNM
+var KEY_PING_RESPONSE = "80,73,78,83";      //PINS
 
 var PNG_HEADER = new Uint8Array([137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82]);
 
@@ -26,8 +28,6 @@ class DataManager
 {
     constructor()
     {
-        this.asd = new Uint8Array();
-        this.id = "123";
         this.isConnected = false;
         this.isSessionStarted = false;
         this.dataTmp = new Uint8Array([]);
@@ -36,6 +36,9 @@ class DataManager
         this.displayField = null;
         this.extraKeys = null;
         this.messageField = null;
+
+        this.pingInterval = -1;
+        this.pingCounter = 0;
     }
     
     initDataManager()
@@ -48,7 +51,7 @@ class DataManager
     {
         this.webSocket = new WebSocket('ws://' + window.location.hostname + ':8081/');
 
-        if(!this.webSocket)
+        if (!this.webSocket)
         {
             this.showDisconnectMessage();
             return;
@@ -57,14 +60,14 @@ class DataManager
         this.webSocket.binaryType = 'arraybuffer';
         this.webSocket.onopen = this.socketConnected.bind(this);
         this.webSocket.onmessage = this.setData.bind(this);
-        this.webSocket.onclose = this.showDisconnectMessage.bind(this);
+        this.webSocket.onclose = this.socketDisconnected.bind(this);
     }
     
     startSession()
     {
-        if(this.webSocket)
+        if (this.webSocket)
         {
-            if(this.webSocket.readyState === WebSocket.OPEN)
+            if (this.webSocket.readyState === WebSocket.OPEN)
             {
                 this.isConnected = true;
                 this.removeDisconnectMessage();
@@ -81,6 +84,13 @@ class DataManager
     {
         setTimeout(this.startSession.bind(this),1500);
     }
+
+    socketDisconnected()
+    {
+        this.isConnected = false;
+        this.isSessionStarted = false;
+        this.showDisconnectMessage();
+    }
     
     setData(event)
     {
@@ -92,22 +102,22 @@ class DataManager
 
         var size = activeBuf.length;
 
-        if(size < REQUEST_MIN_SIZE)
+        if (size < REQUEST_MIN_SIZE)
             return;
 
         var dataStep = 0;
 
         for(var i=0;i<size;++i)
         {
-            var command = activeBuf.subarray(dataStep, dataStep+COMMAD_SIZE);
+            var command = activeBuf.subarray(dataStep, dataStep + COMMAD_SIZE);
             var dataSize = this.uint16FromArray(activeBuf.subarray(dataStep + COMMAD_SIZE, dataStep + COMMAD_SIZE + 2));
 
-            if(size >= (dataStep + COMMAD_SIZE + 2 + dataSize))
+            if (size >= (dataStep + COMMAD_SIZE + 2 + dataSize))
             {
                 var payload = activeBuf.subarray(dataStep + COMMAD_SIZE + 2, dataStep + COMMAD_SIZE + 2 + dataSize);
                 dataStep += COMMAD_SIZE + 2 + dataSize;
 
-                this.newData(command,payload);
+                this.newData(command, payload);
  
                 i = dataStep;
             }
@@ -121,57 +131,58 @@ class DataManager
     
     newData(cmd, data)
     {
-        if(cmd.length !== 4)
+        if (cmd.length !== 4)
             return;
 
         var command = cmd.toString();
 
-        if(command === KEY_SET_NONCE)
+        if (command === KEY_SET_NONCE)
         {
-            if(this.loginClass)
+            if (this.loginClass)
             {
                 this.loginClass.createLoginHtml();
                 this.loginClass.setNonce(btoa(String.fromCharCode.apply(null, data)));
             }
         }
-        else if(command === KEY_SET_AUTH_RESPONSE)
+        else if (command === KEY_SET_AUTH_RESPONSE)
         {
             var response = this.uint16FromArray(data);
             
-            if(response === 1)
+            if (response === 1)
             {
-                if(this.loginClass)
+                if (this.loginClass)
                     this.loginClass.removeLoginHtml();
                 
-                if(this.displayField)
+                if (this.displayField)
                     this.displayField.initDisplayField();
                 
-                if(this.extraKeys)
+                if (this.extraKeys)
                     this.extraKeys.createExtraKeysHtml();
                 
                 this.isSessionStarted = true;
                 this.webSocket.send(KEY_GET_IMAGE);
+                this.startPingInterval();
                 console.log("KEY_GET_IMAGE sended");
             }
             else
             {
-                if(this.loginClass)
+                if (this.loginClass)
                     this.loginClass.showWrongRequest();
                 
                 this.isSessionStarted = false;
             }
             
         }
-        else if(command === KEY_IMAGE_PARAM)
+        else if (command === KEY_IMAGE_PARAM)
         {
             var imageWidth = this.uint16FromArray(data.subarray(0,2));
             var imageHeight = this.uint16FromArray(data.subarray(2,4));
             var rectWidth = this.uint16FromArray(data.subarray(4,6));
             
-            if(this.displayField)
-                this.displayField.setImageParameters(imageWidth,imageHeight,rectWidth);
+            if (this.displayField)
+                this.displayField.setImageParameters(imageWidth, imageHeight, rectWidth);
         }
-        else if(command === KEY_IMAGE_TILE)
+        else if (command === KEY_IMAGE_TILE)
         {
             var posX = this.uint16FromArray(data.subarray(0,2));
             var posY = this.uint16FromArray(data.subarray(2,4));
@@ -182,31 +193,35 @@ class DataManager
             rawData.set(PNG_HEADER,0);
             rawData.set(data.subarray(6,data.length),PNG_HEADER.length);
             
-            if(this.displayField)
+            if (this.displayField)
                 this.displayField.setImageData(posX, posY, rawData, tileNum);
         }
-        else if(command === KEY_CHECK_AUTH_RESPONSE)
+        else if (command === KEY_PING_RESPONSE)
+        {
+            this.pingCounter = 0;
+        }
+        else if (command === KEY_CHECK_AUTH_RESPONSE)
         {
             var uuid = data.subarray(0,16);
             var name = data.subarray(16,data.length);
             var nameString = String.fromCharCode.apply(null, name);
 
-            if(this.loginClass && !this.isSessionStarted)
+            if (this.loginClass && !this.isSessionStarted)
                 this.loginClass.addDesktopButton(uuid, nameString);
         }
-        else if(command === KEY_SET_NAME)
+        else if (command === KEY_SET_NAME)
         {
             var titleName = String.fromCharCode.apply(null, data);
 
-            if(titleName)
+            if (titleName)
                 document.title = titleName;
         }
-        else console.log("newData:",command.toString(),command,data);
+        else console.log("newData:", command.toString(), command, data);
     }
     
     sendToSocket(data)
     {
-        if(this.isConnected)
+        if (this.isConnected)
         {
             this.webSocket.binaryType = 'arraybuffer';
             this.webSocket.send(data);
@@ -216,7 +231,7 @@ class DataManager
 
     sendTextToSocket(text)
     {
-        if(this.isConnected)
+        if (this.isConnected)
         {
             this.webSocket.binaryType = 'blob';
             this.webSocket.send(text);
@@ -225,7 +240,7 @@ class DataManager
     
     setDisplayField(dField)
     {
-        if(dField)
+        if (dField)
         {
             this.displayField = dField;
             dField.setDataManager(this);
@@ -234,7 +249,7 @@ class DataManager
     
     setLoginClass(lClass)
     {
-        if(lClass)
+        if (lClass)
         {
             this.loginClass = lClass;
             lClass.setDataManager(this);
@@ -243,7 +258,7 @@ class DataManager
     
     setExtraKeys(eKeys)
     {
-        if(eKeys)
+        if (eKeys)
         {
             this.extraKeys = eKeys;
             eKeys.setDataManager(this);
@@ -252,28 +267,28 @@ class DataManager
     
     sendParameters(key, param1, param2)
     {
-        var posSize = this.arrayFromUint16(4);
-        var posXBuf = this.arrayFromUint16(param1);
-        var posYBuf = this.arrayFromUint16(param2);
+        var dataSize = this.arrayFromUint16(4);
+        var data1 = this.arrayFromUint16(param1);
+        var data2 = this.arrayFromUint16(param2);
 
         var buf = new Uint8Array(10);
         buf[0] = key[0];
         buf[1] = key[1];
         buf[2] = key[2];
         buf[3] = key[3];
-        buf[4] = posSize[0];
-        buf[5] = posSize[1];
-        buf[6] = posXBuf[0];
-        buf[7] = posXBuf[1];
-        buf[8] = posYBuf[0];
-        buf[9] = posYBuf[1];
+        buf[4] = dataSize[0];
+        buf[5] = dataSize[1];
+        buf[6] = data1[0];
+        buf[7] = data1[1];
+        buf[8] = data2[0];
+        buf[9] = data2[1];
 
         this.sendToSocket(buf);
     }
     
     uint16FromArray(buf)
     {
-        if(buf.length === 2)
+        if (buf.length === 2)
         {
             var number = buf[0] | buf[1] << 8;
             return number;
@@ -288,8 +303,7 @@ class DataManager
         buf[1] = num >> 8;
         return buf;
     }
-    
-    // ________________ XMLHttpRequest ________________
+
     startXmlHttpRequest()
     {
         this.xmlHttpRequest = new XMLHttpRequest();
@@ -301,7 +315,7 @@ class DataManager
         var data = this.xmlHttpRequest.responseText;
         var url = this.xmlHttpRequest.responseURL;
         
-        if(url.includes('keyboard.html'))
+        if (url.includes('keyboard.html'))
             this.displayField.setKeyboardHtml(data);
     }
 
@@ -313,7 +327,7 @@ class DataManager
     
     showDisconnectMessage()
     {
-        if(this.messageField)
+        if (this.messageField)
             return;
         
         this.messageField = document.createElement('div');
@@ -361,13 +375,36 @@ class DataManager
     
     removeDisconnectMessage()
     {
-        if(this.messageField)
+        if (this.messageField)
         {
-            this.messageField.remove;
+            this.messageField.remove();
             this.messageField = null;
         }
     }
-    
-    
-    // ________________________________________________
+
+    startPingInterval()
+    {
+        this.pingInterval = setInterval(this.pingIntervalTick.bind(this), 5000);
+    }
+
+    pingIntervalTick()
+    {
+        if (!this.isSessionStarted)
+            return;
+
+        if (this.pingCounter > 2)
+        {
+            if (this.webSocket)
+            {
+                clearInterval(this.pingInterval);
+                this.webSocket.close();
+                console.log("ERROR: socket is unavailable, reconnecting.");
+            }
+        }
+        else
+        {
+            this.pingCounter += 1;
+            this.sendParameters(KEY_PING_REQUEST, 0, 0);
+        }
+    }
 }

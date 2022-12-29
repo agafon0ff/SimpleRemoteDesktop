@@ -34,9 +34,10 @@ private:
     QTimer *m_timerWaitResponse;
     int m_type;
     int m_waitType;
+    int m_pingCounter;
     bool m_isAuthenticated;
     QString m_url;
-    QByteArray m_name;
+    QString m_name;
 
     QString m_login;
     QString m_pass;
@@ -96,6 +97,8 @@ public slots:
     void sendImageTile(quint16 posX, quint16 posY,
                        const QByteArray &imageData, quint16 tileNum);
     void sendName(const QByteArray &name);
+    void sendPingRequest();
+    void sendPingResponse();
     void checkRemoteAuthentication(const QByteArray &uuid, const QByteArray &nonce, const QByteArray &request);
     void setRemoteAuthenticationResponse(const QByteArray &uuid, const QByteArray &name);
     void createProxyConnection(WebSocketHandler *handler, const QByteArray &uuid);

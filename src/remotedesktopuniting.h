@@ -28,6 +28,7 @@ private:
     QMenu *m_trayMenu;
     QSystemTrayIcon *m_trayIcon;
 
+    QString m_title;
     QString m_currentIp;
     int m_currentPort;
     bool m_isConnectedToProxy;

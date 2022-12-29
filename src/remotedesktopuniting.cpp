@@ -23,6 +23,7 @@ RemoteDesktopUniting::RemoteDesktopUniting(QObject *parent) : QObject(parent),
     m_inputSimulator(new InputSimulator(this)),
     m_trayMenu(new QMenu),
     m_trayIcon(new QSystemTrayIcon(this)),
+    m_title("SimpleRemoteDesktop v1.1"),
     m_currentIp("127.0.0.1"),
     m_currentPort(8080),
     m_isConnectedToProxy(false)
@@ -33,7 +34,7 @@ RemoteDesktopUniting::RemoteDesktopUniting(QObject *parent) : QObject(parent),
 
     m_trayIcon->setContextMenu(m_trayMenu);
     m_trayIcon->setIcon(QIcon(":/res/favicon.ico"));
-    m_trayIcon->setToolTip("SimpleRemoteDesktop");
+    m_trayIcon->setToolTip(m_title);
     m_trayIcon->show();
 
     connect(m_trayMenu,SIGNAL(triggered(QAction*)),this,SLOT(actionTriggered(QAction*)));
@@ -61,7 +62,7 @@ void RemoteDesktopUniting::showInfoMessage()
         message.append("true.");
     else message.append("false :(");
 
-    m_trayIcon->showMessage("SimpleRemoteDesktop", message,
+    m_trayIcon->showMessage(m_title, message,
                             QSystemTrayIcon::Information);
 }
 
@@ -128,14 +129,14 @@ void RemoteDesktopUniting::loadSettings()
     if(name.isEmpty())
     {
         name = QHostInfo::localHostName();
-        settings.setValue("name",name);
+        settings.setValue("name", name);
     }
 
     QString proxyHost = settings.value("proxyHost").toString();
-    if(proxyHost.isEmpty())
+    if (proxyHost.isEmpty())
     {
-        proxyHost = "ws://asv.fvds.ru:8082";
-        settings.setValue("proxyHost",proxyHost);
+        proxyHost = "ws://<your.proxy.address>:8082";
+        settings.setValue("proxyHost", proxyHost);
     }
 
     QString proxyLogin = settings.value("proxyLogin").toString();
@@ -172,7 +173,7 @@ void RemoteDesktopUniting::startHttpServer(quint16 port, const QString &filesPat
     }
     else
     {
-        m_trayIcon->showMessage("SimpleRemoteDesktop","Failed to start on port: " +
+        m_trayIcon->showMessage(m_title, "Failed to start on port: " +
                                 QString::number(port) + "!",QSystemTrayIcon::Critical,5000);
     }
 }
@@ -288,7 +289,7 @@ void RemoteDesktopUniting::remoteClientConnected(const QByteArray &uuid)
     if(!m_remoteClientsList.contains(uuid))
         m_remoteClientsList.append(uuid);
 
-    qDebug()<<"RemoteDesktopUniting::m_remoteClientsList"<<m_remoteClientsList.size();
+    qDebug()<<"RemoteDesktopUniting remote client count:" << m_remoteClientsList.size();
 }
 
 void RemoteDesktopUniting::remoteClientDisconnected(const QByteArray &uuid)
@@ -301,7 +302,7 @@ void RemoteDesktopUniting::remoteClientDisconnected(const QByteArray &uuid)
             emit stopGrabing();
     }
 
-    qDebug()<<"RemoteDesktopUniting::remoteClientDisconnected"<<m_remoteClientsList.size();
+    qDebug()<<"RemoteDesktopUniting remoteClientDisconnected, count:" << m_remoteClientsList.size();
 }
 
 void RemoteDesktopUniting::connectedToProxyServer(bool state)

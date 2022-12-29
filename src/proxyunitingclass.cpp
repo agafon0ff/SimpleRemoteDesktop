@@ -16,6 +16,7 @@ ProxyUnitingClass::ProxyUnitingClass(QObject *parent) : QObject(parent),
     m_clientsSocketTransfer(Q_NULLPTR),
     m_desktopSocketTransfer(Q_NULLPTR)
 {
+    qDebug()<<"SimpleRemoteDesktop v1.1";
     qDebug()<<"Create(ProxyUnitingClass)";
     loadSettings();
 }
@@ -131,8 +132,6 @@ void ProxyUnitingClass::createClientWebSocketConnection(WebSocketHandler *webSoc
 
     connect(webSocket, &WebSocketHandler::newProxyConnection,
             m_desktopSocketTransfer, &WebSocketTransfer::createProxyConnection);
-
-
 }
 
 void ProxyUnitingClass::createDesktopWebSocketConnection(WebSocketHandler *webSocket)

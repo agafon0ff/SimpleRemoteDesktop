@@ -23,11 +23,13 @@ static const char* KEY_SET_NAME = "STNM";
 static const char* KEY_CONNECT_UUID = "CTUU";
 static const char* KEY_CONNECTED_PROXY_CLIENT = "CNPC";
 static const char* KEY_DISCONNECTED_PROXY_CLIENT = "DNPC";
-static const char* KEY_PING = "PING";
+static const char* KEY_PING_REQUEST = "PINQ";
+static const char* KEY_PING_RESPONSE = "PINS";
 
 const int COMMAD_SIZE = 4;
 const int REQUEST_MIN_SIZE = 6;
 const int SIZE_UUID = 16;
+const int INTERVAL_RECONNECT = 5000;
 
 WebSocketHandler::WebSocketHandler(QObject *parent) : QObject(parent),
     m_webSocket(Q_NULLPTR),
@@ -35,6 +37,7 @@ WebSocketHandler::WebSocketHandler(QObject *parent) : QObject(parent),
     m_timerWaitResponse(Q_NULLPTR),
     m_type(HandlerWebClient),
     m_waitType(WaitTypeUnknown),
+    m_pingCounter(0),
     m_isAuthenticated(false)
 {
     m_command.resize(COMMAD_SIZE);
@@ -43,6 +46,9 @@ WebSocketHandler::WebSocketHandler(QObject *parent) : QObject(parent),
 void WebSocketHandler::createSocket()
 {
     if (m_webSocket)
+        return;
+
+    if (!QUrl(m_url).isValid())
         return;
 
     m_webSocket = new QWebSocket("",QWebSocketProtocol::VersionLatest,this);
@@ -95,7 +101,7 @@ void WebSocketHandler::removeSocket()
 void WebSocketHandler::setUrl(const QString &url)
 {
     m_url = url;
-    qDebug()<<"SocketWeb::setUrl"<<url<<QUrl(url).isValid();
+    qDebug() << "WebSocketHandler::setUrl" << url << QUrl(url).isValid();
 }
 
 void WebSocketHandler::setType(int type)
@@ -105,12 +111,12 @@ void WebSocketHandler::setType(int type)
 
 void WebSocketHandler::setName(const QString &name)
 {
-    m_name = name.toUtf8();
+    m_name = name;
 }
 
 QString WebSocketHandler::getName()
 {
-    return QString::fromUtf8(m_name);
+    return m_name;
 }
 
 QByteArray WebSocketHandler::getUuid()
@@ -202,6 +208,22 @@ void WebSocketHandler::sendName(const QByteArray &name)
     sendBinaryMessage(m_dataToSend);
 }
 
+void WebSocketHandler::sendPingRequest()
+{
+    m_dataToSend.clear();
+    m_dataToSend.append(KEY_PING_REQUEST);
+    appendUint16(m_dataToSend, 0);
+    sendBinaryMessage(m_dataToSend);
+}
+
+void WebSocketHandler::sendPingResponse()
+{
+    m_dataToSend.clear();
+    m_dataToSend.append(KEY_PING_RESPONSE);
+    appendUint16(m_dataToSend, 0);
+    sendBinaryMessage(m_dataToSend);
+}
+
 void WebSocketHandler::checkRemoteAuthentication(const QByteArray &uuid, const QByteArray &nonce, const QByteArray &request)
 {
     if (!m_isAuthenticated)
@@ -226,7 +248,7 @@ void WebSocketHandler::checkRemoteAuthentication(const QByteArray &uuid, const Q
 
 void WebSocketHandler::setRemoteAuthenticationResponse(const QByteArray &uuid, const QByteArray &name)
 {
-    qDebug()<<"WebSocketHandler::setRemoteAuthenticationResponse"<<m_type<<uuid.toBase64()<<name;
+    qDebug() << "WebSocketHandler::setRemoteAuthenticationResponse" << m_type << uuid.toBase64() << name;
 
     stopWaitResponseTimer();
 
@@ -276,20 +298,14 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
         {
             if (m_type == HandlerWebClient || m_type == HandlerDesktop)
             {
-                if (data.toBase64() == getHashSum(m_nonce, m_login, m_pass))
-                {
-                    if (!m_isAuthenticated)
-                        m_isAuthenticated = true;
-                }
-                else m_isAuthenticated = false;
-
+                m_isAuthenticated = data.toBase64() == getHashSum(m_nonce, m_login, m_pass);
                 sendAuthenticationResponse(m_isAuthenticated);
-                qDebug()<<"Authentication attempt: "<<m_isAuthenticated;
+                qDebug() << "Authentication attempt: " << m_isAuthenticated;
             }
             else if (m_type == HandlerProxyClient)
             {
                 emit remoteAuthenticationRequest(m_uuid, m_nonce, data);
-                startWaitResponseTimer(5000,WaitTypeRemoteAuth);
+                startWaitResponseTimer(5000, WaitTypeRemoteAuth);
             }
 
             return;
@@ -311,7 +327,7 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
             if (m_type == HandlerSingleClient && authState)
             {
                 m_isAuthenticated = true;
-                sendName(m_name);
+                sendName(m_name.toUtf8());
             }
             else
             {
@@ -328,7 +344,7 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
         }
         else
         {
-            qDebug()<<"DataParser::newData"<<command<<data;
+            qDebug() << "WebSocketHandler::newData" << command << data;
             debugHexData(data);
         }
 
@@ -341,7 +357,7 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
     }
     else if (command == KEY_GET_IMAGE)
     {
-        sendName(m_name);
+        sendName(m_name.toUtf8());
         emit getDesktop();
     }
     else if (command == KEY_TILE_RECEIVED)
@@ -349,9 +365,13 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
         quint16 tileNum = uint16FromArray(data.data());
         emit receivedTileNum(tileNum);
     }
-    else if (command == KEY_PING)
+    else if (command == KEY_PING_REQUEST)
     {
-
+        sendPingResponse();
+    }
+    else if (command == KEY_PING_RESPONSE)
+    {
+        m_pingCounter = 0;
     }
     else if (command == KEY_CHANGE_DISPLAY)
     {
@@ -403,16 +423,16 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
     }
     else if (command == KEY_SET_NAME)
     {
-        m_name = data;
-        qDebug()<<"New desktop connected:"<<m_name;
+        m_name = QString::fromUtf8(data);
+        qDebug() << this << "New desktop connected:" << m_name;
     }
     else if (command == KEY_CHECK_AUTH_REQUEST)
     {
         if (data.size() == SIZE_UUID * 3)
         {
-            QByteArray uuid = data.mid(0, SIZE_UUID);
-            QByteArray nonce = data.mid(SIZE_UUID, SIZE_UUID);
-            QByteArray requset = data.mid(SIZE_UUID * 2, SIZE_UUID);
+            const QByteArray &uuid = data.mid(0, SIZE_UUID);
+            const QByteArray &nonce = data.mid(SIZE_UUID, SIZE_UUID);
+            const QByteArray &requset = data.mid(SIZE_UUID * 2, SIZE_UUID);
 
             sendRemoteAuthenticationResponse(uuid, nonce, requset);
         }
@@ -421,9 +441,9 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
     {
         if (data.size() == SIZE_UUID + 2)
         {
-            QByteArray uuid = data.mid(0, SIZE_UUID);
+            const QByteArray &uuid = data.mid(0, SIZE_UUID);
             quint16 authResponse = uint16FromArray(data.data() + SIZE_UUID);
-            emit remoteAuthenticationResponse(uuid, m_uuid, m_name, static_cast<bool>(authResponse));
+            emit remoteAuthenticationResponse(uuid, m_uuid, m_name.toUtf8(), static_cast<bool>(authResponse));
         }
     }
     else if (command == KEY_CONNECTED_PROXY_CLIENT)
@@ -436,7 +456,7 @@ void WebSocketHandler::newData(const QByteArray &command, const QByteArray &data
     }
     else
     {
-        qDebug()<<"DataParser::newData"<<command<<data;
+        qDebug()<<"WebSocketHandler::newData"<<command<<data;
         debugHexData(data);
     }
 }
@@ -468,7 +488,7 @@ void WebSocketHandler::sendRemoteAuthenticationResponse(const QByteArray &uuid, 
 {
     bool result = request.toBase64() == getHashSum(nonce, m_login, m_pass);
 
-    qDebug()<<"WebSocketHandler::sendRemoteAuthenticationResponse"<<m_type<<uuid.toBase64();
+    qDebug() << "WebSocketHandler::sendRemoteAuthenticationResponse" << m_type << uuid.toBase64();
 
     if (!result)
         return;
@@ -500,47 +520,26 @@ void WebSocketHandler::socketStateChanged(QAbstractSocket::SocketState state)
 {
     switch(state)
     {
-        case QAbstractSocket::UnconnectedState:
-        {
-            if (m_timerReconnect)
-                if (!m_timerReconnect->isActive())
-                    m_timerReconnect->start(5000);
-            break;
-        }
-        case QAbstractSocket::HostLookupState:
-        {
-            break;
-        }
-        case QAbstractSocket::ConnectingState:
-        {
-            if (m_timerReconnect)
-                if (!m_timerReconnect->isActive())
-                    m_timerReconnect->start(5000);
-            break;
-        }
         case QAbstractSocket::ConnectedState:
         {
-            qDebug()<<"SocketWeb::socketStateChanged: Connected to server.";
+            qDebug()<<"WebSocketHandler::socketStateChanged: Connected to server.";
             emit connectedStatus(true);
             break;
         }
         case QAbstractSocket::ClosingState:
         {
-            qDebug()<<"SocketWeb::socketStateChanged: Disconnected from server.";
+            qDebug()<<"WebSocketHandler::socketStateChanged: Disconnected from server.";
             emit connectedStatus(false);
+            emit authenticatedStatus(false);
             m_isAuthenticated = false;
-
-            if (m_timerReconnect)
-                if (!m_timerReconnect->isActive())
-                    m_timerReconnect->start(5000);
-
             break;
         }
-        default:
-        {
-            break;
-        }
+        default: break;
     }
+
+    if (m_timerReconnect)
+        if (!m_timerReconnect->isActive())
+            m_timerReconnect->start(INTERVAL_RECONNECT);
 }
 
 void WebSocketHandler::socketDisconnected()
@@ -613,14 +612,28 @@ void WebSocketHandler::timerReconnectTick()
 {
     if (m_webSocket->state() == QAbstractSocket::ConnectedState)
     {
-        m_timerReconnect->stop();
-        return;
+        if (m_type == HandlerSingleClient && m_isAuthenticated)
+        {
+            if (m_pingCounter > 2)
+            {
+                qDebug() << "WebSocketHandler connection error, reconnecting.";
+                m_webSocket->close();
+                m_pingCounter = 0;
+            }
+            else
+            {
+                ++m_pingCounter;
+                sendPingRequest();
+            }
+        }
     }
+    else
+    {
+        if (m_webSocket->state() == QAbstractSocket::ConnectingState)
+            m_webSocket->abort();
 
-    if (m_webSocket->state() == QAbstractSocket::ConnectingState)
-        m_webSocket->abort();
-
-    m_webSocket->open(QUrl(m_url));
+        m_webSocket->open(QUrl(m_url));
+    }
 }
 
 void WebSocketHandler::startWaitResponseTimer(int msec, int type)
@@ -667,7 +680,7 @@ void WebSocketHandler::debugHexData(const QByteArray &data)
             textHex.append("|");
     }
 
-    qDebug() << "DataParser::debugHexData:"<< textHex << data;
+    qDebug() << "WebSocketHandler::debugHexData:"<< textHex << data;
 }
 
 void WebSocketHandler::appendUint16(QByteArray &data, quint16 number)
