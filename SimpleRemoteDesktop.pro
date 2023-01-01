@@ -19,6 +19,7 @@ CONFIG += c++17
 INCLUDEPATH += src
 
 SOURCES += \
+    src/infowidget.cpp \
     src/serverhttp.cpp \
     src/graberclass.cpp \
     src/inputsimulator.cpp \
@@ -27,6 +28,7 @@ SOURCES += \
     src/websockethandler.cpp
 
 HEADERS += \
+    src/infowidget.h \
     src/serverhttp.h \
     src/graberclass.h \
     src/inputsimulator.h \

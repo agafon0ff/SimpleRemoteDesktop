@@ -1,5 +1,4 @@
-#ifndef WEBSOCKETHANDLER_H
-#define WEBSOCKETHANDLER_H
+#pragma once
 
 #include <QObject>
 #include <QDebug>
@@ -127,5 +126,3 @@ public:
     static void appendUint16(QByteArray &data, quint16 number);
     static quint16 uint16FromArray(const char *buf);
 };
-
-#endif // WEBSOCKETHANDLER_H

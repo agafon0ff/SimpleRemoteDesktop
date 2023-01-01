@@ -1,5 +1,4 @@
-#ifndef WEBSOCKETTRANSFER_H
-#define WEBSOCKETTRANSFER_H
+#pragma once
 
 #include <QObject>
 #include <QDebug>
@@ -51,5 +50,3 @@ private slots:
     void setSocketConnected();
     void socketDisconnected(WebSocketHandler *pointer);
 };
-
-#endif // WEBSOCKETTRANSFER_H

@@ -1,5 +1,4 @@
-#ifndef GRABERCLASS_H
-#define GRABERCLASS_H
+#pragma once
 
 #include <QObject>
 #include <QTimer>
@@ -61,5 +60,3 @@ private slots:
     void sendImage(int posX, int posY, int tileNum, const QImage& image);
     bool isSendTilePermit();
 };
-
-#endif // GRABERCLASS_H

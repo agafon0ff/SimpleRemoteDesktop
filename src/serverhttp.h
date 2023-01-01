@@ -1,5 +1,4 @@
-#ifndef SERVERHTTP_H
-#define SERVERHTTP_H
+#pragma once
 
 #include <QObject>
 #include <QTcpServer>
@@ -41,4 +40,3 @@ private slots:
     void readDataFromSocket();
     void updateFilesList();
 };
-#endif // SERVERHTTP_H
