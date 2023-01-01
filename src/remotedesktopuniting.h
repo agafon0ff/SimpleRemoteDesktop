@@ -1,13 +1,11 @@
-#ifndef REMOTEDESKTOPUNITING_H
-#define REMOTEDESKTOPUNITING_H
+#pragma once
 
-#include <QObject>
-#include <QWidget>
 #include <QSystemTrayIcon>
+#include <QObject>
 #include <QMenu>
-#include <QAction>
 
 #include "serverhttp.h"
+#include "infowidget.h"
 #include "websockettransfer.h"
 #include "graberclass.h"
 #include "inputsimulator.h"
@@ -26,10 +24,10 @@ private:
     GraberClass *m_graberClass;
     InputSimulator *m_inputSimulator;
     QMenu *m_trayMenu;
+    InfoWidget *m_infoWidget;
     QSystemTrayIcon *m_trayIcon;
 
     QString m_title;
-    QString m_currentIp;
     int m_currentPort;
     bool m_isConnectedToProxy;
 
@@ -42,10 +40,7 @@ signals:
 public slots:
 
 private slots:
-    void actionTriggered(QAction* action);
-    void showInfoMessage();
-    void updateCurrentIp();
-    void loadSettings();
+    void showInfoWidget();
     void startHttpServer(quint16 port, const QString &filesPath);
     void startGraberClass();
     void startWebSocketTransfer(quint16 port, const QString &login, const QString &pass, const QString &name);
@@ -59,4 +54,3 @@ private slots:
     void connectedToProxyServer(bool state);
 };
 
-#endif // REMOTEDESKTOPUNITING_H

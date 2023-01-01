@@ -414,7 +414,6 @@ class DisplayField
         if(!this.ctx)
             return;
 
-        const blob = new Blob([data]);
         var image = new Image();
         image.posX = posX * this.rectWidth;
         image.posY = posY * this.rectWidth;
@@ -423,16 +422,16 @@ class DisplayField
         image.width = this.rectWidth;
         image.height = this.rectWidth;
         image.tileNum = tileNum;
-        image.url = URL.createObjectURL(blob);
+
+        let b64encoded = 'data:image/png;base64,' + btoa(String.fromCharCode.apply(null, data));
 
         image.onload = function()
         {
             this.ctx.drawImage(this, this.posX, this.posY, this.width, this.height);
-            this.dataManager.sendParameters(KEY_TILE_RECEIVED,this.tileNum,0);
-            URL.revokeObjectURL( this.url );
         }
 
-        image.src = image.url;
+        image.src = b64encoded;
+        this.dataManager.sendParameters(KEY_TILE_RECEIVED, tileNum, 0);
     }
     
     createCanvas()
