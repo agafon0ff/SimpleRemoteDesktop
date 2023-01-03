@@ -40,4 +40,6 @@ private:
     QString m_proxyHost = "ws://<your.proxy.address>:8082";
     QString m_proxyLogin = "sysadmin";
     QString m_proxyPass = "12345678";
+    QWidget *m_infoWidget = nullptr;
+    QWidget *m_settingsWidget = nullptr;
 };

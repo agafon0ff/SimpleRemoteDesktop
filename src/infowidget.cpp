@@ -18,21 +18,9 @@
 InfoWidget::InfoWidget(QWidget *parent)
     : QMainWindow{parent}
 {
-    loadSettings();
     setWindowIcon(QIcon(":/res/favicon.ico"));
     setAttribute(Qt::WA_QuitOnClose, false);
     setMinimumWidth(400);
-
-    QMenuBar *menuBar = new QMenuBar(this);
-    menuBar->addAction("Settings");
-
-    QCommonStyle style;
-    QMenu *menuAbout = menuBar->addMenu("About");
-    menuAbout->addAction(QIcon(":/res/favicon.ico"), "About SRD", this, &InfoWidget::showAboutSRDMessage);
-    menuAbout->addAction(QIcon(style.standardPixmap(QStyle::SP_TitleBarMenuButton)),
-                         "About Qt", this, &InfoWidget::showAboutQtMessage);
-
-    setMenuBar(menuBar);
 
     QWidget *centralWidget = new QWidget(this);
     QGridLayout *gridLayout = new QGridLayout(centralWidget);
@@ -41,8 +29,21 @@ InfoWidget::InfoWidget(QWidget *parent)
     gridLayout->setContentsMargins(0, 0, 0, 0);
     setCentralWidget(centralWidget);
 
+    loadSettings();
     createInfoWidget();
     createSettingsWidget();
+
+    QMenuBar *menuBar = new QMenuBar(this);
+    menuBar->addAction("Info", this, [=]{ m_settingsWidget->hide(); m_infoWidget->show(); });
+    menuBar->addAction("Settings", this, [=]{ m_infoWidget->hide(); m_settingsWidget->show(); });
+
+    QCommonStyle style;
+    QMenu *menuAbout = menuBar->addMenu("About");
+    menuAbout->addAction(QIcon(":/res/favicon.ico"), "About SRD", this, &InfoWidget::showAboutSRDMessage);
+    menuAbout->addAction(QIcon(style.standardPixmap(QStyle::SP_TitleBarMenuButton)),
+                         "About Qt", this, &InfoWidget::showAboutQtMessage);
+
+    setMenuBar(menuBar);
 }
 
 void InfoWidget::loadSettings()
@@ -123,95 +124,107 @@ void InfoWidget::showAboutQtMessage()
 
 void InfoWidget::createInfoWidget()
 {
-    QWidget *infoWidget = new QWidget(centralWidget());
-    QGridLayout *gridLayout = new QGridLayout(infoWidget);
-    gridLayout->setSpacing(21);
-    gridLayout->setContentsMargins(21, 21, 21, 21);
+    if (m_infoWidget)
+        return;
+
+    m_infoWidget = new QWidget(centralWidget());
+    QGridLayout *gridLayout = new QGridLayout(m_infoWidget);
+    gridLayout->setSpacing(9);
+    gridLayout->setContentsMargins(9, 9, 9, 9);
 
     QFont font = QApplication::font();
-    font.setPointSize(font.pointSize() * 2);
+    font.setPointSize(font.pointSize() * 1.5);
 
-    QLabel *infoLabel = new QLabel(infoWidget);
+    QLabel *labelFavicon = new QLabel(m_infoWidget);
+    labelFavicon->setPixmap(QPixmap(":/res/favicon.ico"));
+    labelFavicon->setScaledContents(true);
+    labelFavicon->setMaximumSize(50, 50);
+    gridLayout->addWidget(labelFavicon, 0, 0);
+
+    QLabel *infoLabel = new QLabel(m_infoWidget);
     infoLabel->setText("To manage this computer\nfollow the link below:");
     infoLabel->setAlignment(Qt::AlignCenter);
     infoLabel->setWordWrap(true);
     infoLabel->setFont(font);
-    gridLayout->addWidget(infoLabel);
+    gridLayout->addWidget(infoLabel, 0, 1);
 
 
-    QLabel *addrLabel = new QLabel(infoWidget);
+    QLabel *addrLabel = new QLabel(m_infoWidget);
     addrLabel->setText(getLocalAddress());
     addrLabel->setAlignment(Qt::AlignCenter);
     addrLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
     addrLabel->setFont(font);
-    gridLayout->addWidget(addrLabel);
+    gridLayout->addWidget(addrLabel, 1, 0, 1, 2);
 
-    centralWidget()->layout()->addWidget(infoWidget);
-    infoWidget->hide();
+    centralWidget()->layout()->addWidget(m_infoWidget);
 }
 
 void InfoWidget::createSettingsWidget()
 {
-    QWidget *infoWidget = new QWidget(centralWidget());
-    QGridLayout *gridLayout = new QGridLayout(infoWidget);
+    if (m_settingsWidget)
+        return;
+
+    m_settingsWidget = new QWidget(centralWidget());
+    QGridLayout *gridLayout = new QGridLayout(m_settingsWidget);
     gridLayout->setSpacing(9);
     gridLayout->setContentsMargins(9, 9, 9, 9);
 
     int row = 0;
 
-    QLabel *labelName = new QLabel("Name:", infoWidget);
+    QLabel *labelName = new QLabel("Name:", m_settingsWidget);
     gridLayout->addWidget(labelName, ++row, 0);
 
-    QLineEdit *lineEditName = new QLineEdit(m_name, infoWidget);
+    QLineEdit *lineEditName = new QLineEdit(m_name, m_settingsWidget);
     gridLayout->addWidget(lineEditName, row, 1);
 
-    QLabel *labelPortHttp = new QLabel("Http port:", infoWidget);
+    QLabel *labelPortHttp = new QLabel("Http port:", m_settingsWidget);
     gridLayout->addWidget(labelPortHttp, ++row, 0);
 
-    QLineEdit *lineEditPortHttp = new QLineEdit(QString::number(m_portHttp), infoWidget);
+    QLineEdit *lineEditPortHttp = new QLineEdit(QString::number(m_portHttp), m_settingsWidget);
     lineEditPortHttp->setValidator(new QIntValidator(0, 65535, this));
     gridLayout->addWidget(lineEditPortHttp, row, 1);
 
-    QLabel *labelPortWeb = new QLabel("WebSocket port:", infoWidget);
+    QLabel *labelPortWeb = new QLabel("WebSocket port:", m_settingsWidget);
     gridLayout->addWidget(labelPortWeb, ++row, 0);
 
-    QLineEdit *lineEditPortWeb = new QLineEdit(QString::number(m_portWeb), infoWidget);
+    QLineEdit *lineEditPortWeb = new QLineEdit(QString::number(m_portWeb), m_settingsWidget);
     lineEditPortWeb->setValidator(lineEditPortHttp->validator());
     gridLayout->addWidget(lineEditPortWeb, row, 1);
 
-    QLabel *labelLogin = new QLabel("Login:", infoWidget);
+    QLabel *labelLogin = new QLabel("Login:", m_settingsWidget);
     gridLayout->addWidget(labelLogin, ++row, 0);
 
-    QLineEdit *lineEditLogin = new QLineEdit(m_login, infoWidget);
+    QLineEdit *lineEditLogin = new QLineEdit(m_login, m_settingsWidget);
     gridLayout->addWidget(lineEditLogin, row, 1);
 
-    QLabel *labelPass = new QLabel("Password:", infoWidget);
+    QLabel *labelPass = new QLabel("Password:", m_settingsWidget);
     gridLayout->addWidget(labelPass, ++row, 0);
 
-    QLineEdit *lineEditPass = new QLineEdit(m_pass, infoWidget);
+    QLineEdit *lineEditPass = new QLineEdit(m_pass, m_settingsWidget);
     lineEditPass->setEchoMode(QLineEdit::Password);
     gridLayout->addWidget(lineEditPass, row, 1);
 
-    QLabel *labelProxyAddr = new QLabel("Proxy address:", infoWidget);
+    QLabel *labelProxyAddr = new QLabel("Proxy address:", m_settingsWidget);
     gridLayout->addWidget(labelProxyAddr, ++row, 0);
 
-    QLineEdit *lineEditProxyAddr = new QLineEdit(m_proxyHost, infoWidget);
+    QLineEdit *lineEditProxyAddr = new QLineEdit(m_proxyHost, m_settingsWidget);
     gridLayout->addWidget(lineEditProxyAddr, row, 1);
 
-    QLabel *labelProxyLogin = new QLabel("Proxy login:", infoWidget);
+    QLabel *labelProxyLogin = new QLabel("Proxy login:", m_settingsWidget);
     gridLayout->addWidget(labelProxyLogin, ++row, 0);
 
-    QLineEdit *lineEditProxyLogin = new QLineEdit(m_proxyLogin, infoWidget);
+    QLineEdit *lineEditProxyLogin = new QLineEdit(m_proxyLogin, m_settingsWidget);
     gridLayout->addWidget(lineEditProxyLogin, row, 1);
 
-    QLabel *labelProxyPass = new QLabel("Proxy password:", infoWidget);
+    QLabel *labelProxyPass = new QLabel("Proxy password:", m_settingsWidget);
     gridLayout->addWidget(labelProxyPass, ++row, 0);
 
-    QLineEdit *lineEditProxyPass = new QLineEdit(m_proxyPass, infoWidget);
+    QLineEdit *lineEditProxyPass = new QLineEdit(m_proxyPass, m_settingsWidget);
     lineEditProxyPass->setEchoMode(QLineEdit::Password);
     gridLayout->addWidget(lineEditProxyPass, row, 1);
 
-    centralWidget()->layout()->addWidget(infoWidget);
+    centralWidget()->layout()->addWidget(m_settingsWidget);
+    m_settingsWidget->hide();
 }
 
 QString InfoWidget::getLocalAddress()

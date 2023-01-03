@@ -51,6 +51,7 @@ RemoteDesktopUniting::RemoteDesktopUniting(QObject *parent) : QObject(parent),
 void RemoteDesktopUniting::showInfoWidget()
 {
     m_infoWidget->showNormal();
+    m_infoWidget->raise();
 }
 
 void RemoteDesktopUniting::startHttpServer(quint16 port, const QString &filesPath)
