@@ -171,6 +171,10 @@ void InfoWidget::createSettingsWidget()
 
     int row = 0;
 
+    QLabel *labelMainSettings = new QLabel("Main settings:", m_settingsWidget);
+    labelMainSettings->setAlignment(Qt::AlignCenter);
+    gridLayout->addWidget(labelMainSettings, row, 0, 1, 2);
+
     QLabel *labelName = new QLabel("Name:", m_settingsWidget);
     gridLayout->addWidget(labelName, ++row, 0);
 
@@ -203,6 +207,13 @@ void InfoWidget::createSettingsWidget()
     QLineEdit *lineEditPass = new QLineEdit(m_pass, m_settingsWidget);
     lineEditPass->setEchoMode(QLineEdit::Password);
     gridLayout->addWidget(lineEditPass, row, 1);
+
+    QLabel *labelSpacer = new QLabel(m_settingsWidget);
+    gridLayout->addWidget(labelSpacer, ++row, 0);
+
+    QLabel *labelProxySettings = new QLabel("Proxy settings:", m_settingsWidget);
+    labelProxySettings->setAlignment(Qt::AlignCenter);
+    gridLayout->addWidget(labelProxySettings, ++row, 0, 1, 2);
 
     QLabel *labelProxyAddr = new QLabel("Proxy address:", m_settingsWidget);
     gridLayout->addWidget(labelProxyAddr, ++row, 0);
