@@ -94,8 +94,8 @@ class DisplayField
                 this.dataManager.sendParameters(KEY_SET_MOUSE_KEY,0,1);
             }
 
-            var x = e.touches[0].pageX;
-            var y = e.touches[0].pageY;
+            const x = e.touches[0].pageX;
+            const y = e.touches[0].pageY;
 
             this.calcCursorPos(x, y);
         }
@@ -106,13 +106,13 @@ class DisplayField
             if(this.touchTimer)
                 clearTimeout(this.touchTimer);
 
-            var x1 = e.touches[0].pageX;
-            var y1 = e.touches[0].pageY;
+            const x1 = e.touches[0].pageX;
+            const y1 = e.touches[0].pageY;
 
-            var x2 = e.touches[1].pageX;
-            var y2 = e.touches[1].pageY;
+            const x2 = e.touches[1].pageX;
+            const y2 = e.touches[1].pageY;
 
-            var distance = Math.sqrt(((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1)));
+            let distance = Math.sqrt(((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1)));
 
             if(distance > this.touchDistance)
                 this.scaleSize += 0.5;
@@ -217,8 +217,8 @@ class DisplayField
 
     calcCursorPos(x, y)
     {
-        var deltaX = this.touchX - x;
-        var deltaY = this.touchY - y;
+        const deltaX = this.touchX - x;
+        const deltaY = this.touchY - y;
 
         this.touchX = x;
         this.touchY = y;
@@ -270,8 +270,8 @@ class DisplayField
 
     cursorPosChanged(event)
     {
-        var x = event.clientX;
-        var y = event.clientY;
+        const x = event.clientX;
+        const y = event.clientY;
 
         this.cursorPosX = this.canvas.width / this.canvasRect.w * (x - this.canvasRect.x);
         this.cursorPosY = this.canvas.height / this.canvasRect.h * (y - this.canvasRect.y);
@@ -282,7 +282,7 @@ class DisplayField
     keyStateChanged(event)
     {
         event.preventDefault();
-        var state = 0;
+        let state = 0;
         
         if(event.type === 'keydown')
             state = 1;
@@ -303,8 +303,8 @@ class DisplayField
     {
         this.width = window.innerWidth;
         this.height = window.innerHeight;
-        var fieldHeight = this.height;
-        var rect;
+        let fieldHeight = this.height;
+        let rect;
 
         if(this.keyboard.style.visibility === "visible")
         {
@@ -343,9 +343,9 @@ class DisplayField
         this.canvasRect.w = rect.w + this.deltaRect.w;
         this.canvasRect.h = rect.h + this.deltaRect.h;
 
-        var rectList = [this.canvas, this.cursorContainer];
+        let rectList = [this.canvas, this.cursorContainer];
 
-        for(var i=0;i<rectList.length;++i)
+        for(let i=0;i<rectList.length;++i)
         {
             rectList[i].style.left = this.canvasRect.x + 'px';
             rectList[i].style.top = this.canvasRect.y + 'px';
@@ -356,20 +356,20 @@ class DisplayField
     
     updatePositions()
     {
-        var posX = this.cursorPosX * this.canvasRect.w / this.canvas.width;
-        var posY = this.cursorPosY * this.canvasRect.h / this.canvas.height;
+        const posX = this.cursorPosX * this.canvasRect.w / this.canvas.width;
+        const posY = this.cursorPosY * this.canvasRect.h / this.canvas.height;
 
         this.cursor.style.left = posX + "px";
         this.cursor.style.top = posY + "px";
 
         if(this.scaleSize > 0)
         {
-            var percentX = 1.0 / this.canvas.width * this.cursorPosX;
-            var percentY = 1.0 / this.canvas.height * this.cursorPosY;
+            const percentX = 1.0 / this.canvas.width * this.cursorPosX;
+            const percentY = 1.0 / this.canvas.height * this.cursorPosY;
 
-            var delta = this.scaleSize * 10;
-            var deltaX = (delta * percentX) - (delta / 2);
-            var deltaY = (delta * percentY) - (delta / 2);
+            const delta = this.scaleSize * 10;
+            let deltaX = (delta * percentX) - (delta / 2);
+            let deltaY = (delta * percentY) - (delta / 2);
 
             this.deltaRect.x = (this.deltaRect.w * percentX) + deltaX;
             this.deltaRect.y = (this.deltaRect.h * percentY) + deltaY;
@@ -385,9 +385,9 @@ class DisplayField
     
     leavePageEvent()
     {
-        var len = this.keyPressedList.length;
+        const len = this.keyPressedList.length;
 
-        for(var i=0;i<len;++i)
+        for(let i=0;i<len;++i)
             this.dataManager.sendParameters(KEY_SET_KEY_STATE,this.keyPressedList[i],false);
     }
 
@@ -414,7 +414,7 @@ class DisplayField
         if(!this.ctx)
             return;
 
-        var image = new Image();
+        let image = new Image();
         image.posX = posX * this.rectWidth;
         image.posY = posY * this.rectWidth;
         image.ctx = this.ctx;
@@ -423,14 +423,15 @@ class DisplayField
         image.height = this.rectWidth;
         image.tileNum = tileNum;
 
-        let b64encoded = 'data:image/png;base64,' + btoa(String.fromCharCode.apply(null, data));
-
         image.onload = function()
         {
             this.ctx.drawImage(this, this.posX, this.posY, this.width, this.height);
+            URL.revokeObjectURL(this.src);
         }
 
-        image.src = b64encoded;
+        const blob = new Blob([data])
+        image.src = URL.createObjectURL(blob);
+
         this.dataManager.sendParameters(KEY_TILE_RECEIVED, tileNum, 0);
     }
     
@@ -482,7 +483,7 @@ class DisplayField
         
         this.cursorContainer.append(this.cursor);
         
-        var svgCursor = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        let svgCursor = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         svgCursor.id = 'svgCursor';
         svgCursor.setAttribute("width", "24");
         svgCursor.setAttribute("height", "24");
@@ -531,18 +532,18 @@ class DisplayField
         this.keyboard.isLoaded = true;
         this.keyboard.innerHTML = text;
         
-        var keys = this.keyboard.getElementsByClassName('key');
+        let keys = this.keyboard.getElementsByClassName('key');
 
         if(this.isMobilePhone)
         {
-            for(var j=0;j<keys.length;++j) {
+            for(let j=0;j<keys.length;++j) {
                 keys[j].addEventListener('touchstart', this.keyboardKeyStateChanged.bind(this,keys[j],1));
                 keys[j].addEventListener('touchend', this.keyboardKeyStateChanged.bind(this,keys[j],0));
             }
         }
         else
         {
-            for(var i=0;i<keys.length;++i) {
+            for(let i=0;i<keys.length;++i) {
                 keys[i].addEventListener('mousedown', this.keyboardKeyStateChanged.bind(this,keys[i],1));
                 keys[i].addEventListener('mouseup', this.keyboardKeyStateChanged.bind(this,keys[i],0));
             }
@@ -551,15 +552,15 @@ class DisplayField
     
     keyboardKeyStateChanged(key,state,event)
     {
-        var num = key.getAttribute("num");
+        const num = key.getAttribute("num");
         this.dataManager.sendParameters(KEY_SET_KEY_STATE,num,state);
     }
     
     proportionalResizing(rectX, rectY, rectW, rectH, ratioW, ratioH)
     {
-        var sSolution = ((rectW * ratioH) / rectH);
+        const sSolution = ((rectW * ratioH) / rectH);
 
-        var sRect = new Rect(rectX,rectY,rectW,rectH);
+        let sRect = new Rect(rectX,rectY,rectW,rectH);
 
         if(sSolution > ratioW) {
             sRect.w = (ratioW * rectH) / ratioH;
