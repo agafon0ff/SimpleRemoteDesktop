@@ -8,8 +8,6 @@
 #include <QDebug>
 #include <QBuffer>
 
-const int PNG_HEADER_SIZE = 16;
-
 GraberClass::GraberClass(QObject *parent) : QObject(parent),
     m_grabTimer(Q_NULLPTR),
     m_grabInterval(40),
@@ -106,6 +104,7 @@ void GraberClass::updateImage()
     }
 
     quint16 tileNum = 0;
+    m_currentTileNum = 0;
 
     for (int j=0; j<rowCount; ++j)
     {
@@ -140,28 +139,20 @@ void GraberClass::sendImage(int posX, int posY, int tileNum, const QImage &image
     QBuffer buffer(&m_dataToSend);
     buffer.open(QIODevice::WriteOnly);
     image.save(&buffer, "PNG");
-    m_dataToSend.remove(0,PNG_HEADER_SIZE);
 
-    emit imageTile(static_cast<quint16>(posX),static_cast<quint16>(posY),m_dataToSend,static_cast<quint16>(tileNum));
+    emit imageTile(static_cast<quint16>(posX), static_cast<quint16>(posY), m_dataToSend, static_cast<quint16>(tileNum));
 }
 
 bool GraberClass::isSendTilePermit()
 {
-    bool result = false;
+    if (m_receivedTileNum >= m_currentTileNum)
+        return true;
 
-    if(m_currentTileNum == m_receivedTileNum)
-        result = true;
-
-    if(!result)
+    if (++m_permitCounter > 20)
     {
-        ++m_permitCounter;
-
-        if(m_permitCounter > 20)
-        {
-            m_permitCounter = 0;
-            result = true;
-        }
+        m_permitCounter = 0;
+        return true;
     }
 
-    return result;
+    return false;
 }

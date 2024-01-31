@@ -1,10 +1,11 @@
 #include "remotedesktopuniting.h"
-#include <QNetworkInterface>
 #include <QApplication>
 #include <QCommonStyle>
+#include <QMessageBox>
 #include <QSettings>
 #include <QHostInfo>
 #include <QThread>
+#include <QAction>
 #include <QDebug>
 #include <QUuid>
 
@@ -22,143 +23,35 @@ RemoteDesktopUniting::RemoteDesktopUniting(QObject *parent) : QObject(parent),
     m_graberClass(nullptr),
     m_inputSimulator(new InputSimulator(this)),
     m_trayMenu(new QMenu),
+    m_infoWidget(new InfoWidget),
     m_trayIcon(new QSystemTrayIcon(this)),
     m_title("SimpleRemoteDesktop v1.1"),
-    m_currentIp("127.0.0.1"),
     m_currentPort(8080),
     m_isConnectedToProxy(false)
 {
-    QCommonStyle style;
-    m_trayMenu->addAction(QIcon(style.standardPixmap(QStyle::SP_MessageBoxInformation)),"Help");
-    m_trayMenu->addAction(QIcon(style.standardPixmap(QStyle::SP_DialogCancelButton)),"Exit");
+    m_infoWidget->setWindowTitle(m_title);
+    m_trayMenu->addAction(QIcon(":/res/info.ico"), "Info", this, &RemoteDesktopUniting::showInfoWidget);
+    m_trayMenu->addAction(QIcon(":/res/close.ico"), "Exit", this, &RemoteDesktopUniting::closeSignal);
 
     m_trayIcon->setContextMenu(m_trayMenu);
     m_trayIcon->setIcon(QIcon(":/res/favicon.ico"));
     m_trayIcon->setToolTip(m_title);
     m_trayIcon->show();
 
-    connect(m_trayMenu,SIGNAL(triggered(QAction*)),this,SLOT(actionTriggered(QAction*)));
-
     startGraberClass();
-    updateCurrentIp();
-    loadSettings();
+    startHttpServer(static_cast<quint16>(m_infoWidget->portHttp()), m_infoWidget->filesPath());
+
+    startWebSocketTransfer(static_cast<quint16>(m_infoWidget->portWeb()), m_infoWidget->login(),
+                           m_infoWidget->pass(), m_infoWidget->name());
+
+    startWebSocketHandler(m_infoWidget->proxyHost(), m_infoWidget->name(), m_infoWidget->login(),
+                          m_infoWidget->pass(), m_infoWidget->proxyLogin(), m_infoWidget->proxyPass());
 }
 
-void RemoteDesktopUniting::actionTriggered(QAction *action)
+void RemoteDesktopUniting::showInfoWidget()
 {
-    if(action->text() == "Help")
-        showInfoMessage();
-    else if(action->text() == "Exit")
-        emit closeSignal();
-}
-
-void RemoteDesktopUniting::showInfoMessage()
-{
-    QString message("To connect, enter in browser:\n" +
-                   m_currentIp + ":" + QString::number(m_currentPort) + "\n"
-                   "Proxy-server connection: ");
-
-    if(m_isConnectedToProxy)
-        message.append("true.");
-    else message.append("false :(");
-
-    m_trayIcon->showMessage(m_title, message,
-                            QSystemTrayIcon::Information);
-}
-
-void RemoteDesktopUniting::updateCurrentIp()
-{
-    QList<QHostAddress> my_addr_list;
-    QList<QHostAddress> addresses = QNetworkInterface::allAddresses();
-
-    for(int i=0;i<addresses.count();++i)
-    {
-        if(addresses.at(i).protocol() == QAbstractSocket::IPv4Protocol &&
-                !addresses.at(i).toString().contains("127") &&
-                !addresses.at(i).toString().contains("172"))
-        {
-            my_addr_list.append(addresses.at(i));
-        }
-    }
-
-    if(my_addr_list.count() > 0)
-        m_currentIp = my_addr_list.at(0).toString();
-}
-
-void RemoteDesktopUniting::loadSettings()
-{
-    QSettings settings("config.ini",QSettings::IniFormat);
-    settings.beginGroup("REMOTE_DESKTOP");
-
-    int portHttp = settings.value("portHttp",0).toInt();
-    if(portHttp == 0)
-    {
-        portHttp = 8080;
-        settings.setValue("portHttp",portHttp);
-    }
-
-    QString filesPath = settings.value("filesPath").toString();
-    if(filesPath.isEmpty())
-    {
-        filesPath = ":/res/";
-        settings.setValue("filesPath",filesPath);
-    }
-
-    int portWeb = settings.value("portWeb",0).toInt();
-    if(portWeb == 0)
-    {
-        portWeb = 8081;
-        settings.setValue("portWeb",portWeb);
-    }
-
-    QString login = settings.value("login").toString();
-    if(login.isEmpty())
-    {
-        login = "login";
-        settings.setValue("login",login);
-    }
-
-    QString pass = settings.value("pass").toString();
-    if(pass.isEmpty())
-    {
-        pass = "pass";
-        settings.setValue("pass",pass);
-    }
-
-    QString name = settings.value("name").toString();
-    if(name.isEmpty())
-    {
-        name = QHostInfo::localHostName();
-        settings.setValue("name", name);
-    }
-
-    QString proxyHost = settings.value("proxyHost").toString();
-    if (proxyHost.isEmpty())
-    {
-        proxyHost = "ws://<your.proxy.address>:8082";
-        settings.setValue("proxyHost", proxyHost);
-    }
-
-    QString proxyLogin = settings.value("proxyLogin").toString();
-    if(proxyLogin.isEmpty())
-    {
-        proxyLogin = "sysadmin";
-        settings.setValue("proxyLogin",proxyLogin);
-    }
-
-    QString proxyPass = settings.value("proxyPass").toString();
-    if(proxyPass.isEmpty())
-    {
-        proxyPass = "12345678";
-        settings.setValue("proxyPass",proxyPass);
-    }
-
-    settings.endGroup();
-    settings.sync();
-
-    startHttpServer(static_cast<quint16>(portHttp), filesPath);
-    startWebSocketTransfer(static_cast<quint16>(portWeb), login, pass, name);
-    startWebSocketHandler(proxyHost, name, login, pass, proxyLogin, proxyPass);
+    m_infoWidget->showNormal();
+    m_infoWidget->raise();
 }
 
 void RemoteDesktopUniting::startHttpServer(quint16 port, const QString &filesPath)
@@ -169,12 +62,12 @@ void RemoteDesktopUniting::startHttpServer(quint16 port, const QString &filesPat
 
     if(m_serverHttp->start())
     {
-        showInfoMessage();
+        showInfoWidget();
     }
     else
     {
         m_trayIcon->showMessage(m_title, "Failed to start on port: " +
-                                QString::number(port) + "!",QSystemTrayIcon::Critical,5000);
+                                QString::number(port) + "!", QSystemTrayIcon::Critical, 5000);
     }
 }
 
@@ -312,6 +205,6 @@ void RemoteDesktopUniting::connectedToProxyServer(bool state)
         m_isConnectedToProxy = state;
 
         if(state)
-            showInfoMessage();
+            showInfoWidget();
     }
 }

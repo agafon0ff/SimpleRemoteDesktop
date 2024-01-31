@@ -8,5 +8,8 @@
         <file>res/loginClass.js</file>
         <file>res/md5.js</file>
         <file>res/extraKeys.js</file>
+        <file>res/info.ico</file>
+        <file>res/question.ico</file>
+        <file>res/close.ico</file>
     </qresource>
 </RCC>

@@ -1,5 +1,4 @@
-#ifndef INPUTSIMULATOR_H
-#define INPUTSIMULATOR_H
+#pragma once
 
 #include <QObject>
 #include <QMap>
@@ -29,5 +28,3 @@ public slots:
 private slots:
     void createKeysMap();
 };
-
-#endif // INPUTSIMULATOR_H

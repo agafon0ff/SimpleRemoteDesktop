@@ -187,7 +187,6 @@ class DataManager
             var posX = this.uint16FromArray(data.subarray(0,2));
             var posY = this.uint16FromArray(data.subarray(2,4));
             var tileNum = this.uint16FromArray(data.subarray(4,6));
-            
             var rawData = new Uint8Array((data.length - 6) + PNG_HEADER.length);
             
             rawData.set(PNG_HEADER,0);
@@ -392,7 +391,7 @@ class DataManager
         if (!this.isSessionStarted)
             return;
 
-        if (this.pingCounter > 2)
+        if (this.pingCounter > 1)
         {
             if (this.webSocket)
             {
