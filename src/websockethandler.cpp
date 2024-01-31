@@ -30,6 +30,7 @@ const int COMMAD_SIZE = 4;
 const int REQUEST_MIN_SIZE = 6;
 const int SIZE_UUID = 16;
 const int INTERVAL_RECONNECT = 5000;
+const int PNG_HEADER_SIZE = 16;
 
 WebSocketHandler::WebSocketHandler(QObject *parent) : QObject(parent),
     m_webSocket(Q_NULLPTR),
@@ -184,13 +185,14 @@ void WebSocketHandler::sendImageTile(quint16 posX, quint16 posY, const QByteArra
     if (!m_isAuthenticated)
         return;
 
+    quint16 imageSize = static_cast<quint16>(imageData.size()) - PNG_HEADER_SIZE;
     m_dataToSend.clear();
     m_dataToSend.append(KEY_IMAGE_TILE);
-    appendUint16(m_dataToSend, static_cast<quint16>(imageData.size() + 6));
+    appendUint16(m_dataToSend, imageSize  + 6);
     appendUint16(m_dataToSend, posX);
     appendUint16(m_dataToSend, posY);
     appendUint16(m_dataToSend, tileNum);
-    m_dataToSend.append(imageData);
+    m_dataToSend.append(imageData.data() + PNG_HEADER_SIZE, imageSize);
 
     sendBinaryMessage(m_dataToSend);
 }

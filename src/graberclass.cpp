@@ -8,8 +8,6 @@
 #include <QDebug>
 #include <QBuffer>
 
-const int PNG_HEADER_SIZE = 16;
-
 GraberClass::GraberClass(QObject *parent) : QObject(parent),
     m_grabTimer(Q_NULLPTR),
     m_grabInterval(40),
@@ -141,7 +139,6 @@ void GraberClass::sendImage(int posX, int posY, int tileNum, const QImage &image
     QBuffer buffer(&m_dataToSend);
     buffer.open(QIODevice::WriteOnly);
     image.save(&buffer, "PNG");
-    m_dataToSend.remove(0, PNG_HEADER_SIZE);
 
     emit imageTile(static_cast<quint16>(posX), static_cast<quint16>(posY), m_dataToSend, static_cast<quint16>(tileNum));
 }
