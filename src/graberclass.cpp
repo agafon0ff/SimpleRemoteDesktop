@@ -16,8 +16,7 @@ GraberClass::GraberClass(QObject *parent) : QObject(parent),
     m_currentTileNum(0),
     m_receivedTileNum(0),
     m_permitCounter(0),
-    m_tileCurrentImage(m_rectSize, m_rectSize, QImage::Format_RGB444),
-    m_tileLastImage(m_rectSize, m_rectSize, QImage::Format_RGB444)
+    m_tileCurrentImage(m_rectSize, m_rectSize, QImage::Format_RGB444)
 {
 }
 
@@ -103,6 +102,7 @@ void GraberClass::updateImage()
         sendWithoutCompare = true;
     }
 
+    QRect tileRect;
     quint16 tileNum = 0;
     m_currentTileNum = 0;
 
@@ -110,14 +110,10 @@ void GraberClass::updateImage()
     {
         for (int i=0; i<columnCount; ++i)
         {
-            m_tileCurrentImage = m_currentImage.copy(i * m_rectSize, j * m_rectSize, m_rectSize, m_rectSize);
-
-            if (!sendWithoutCompare)
-                m_tileLastImage = m_lastImage.copy(i * m_rectSize, j * m_rectSize, m_rectSize, m_rectSize);
-
-            if(sendWithoutCompare || m_tileLastImage != m_tileCurrentImage)
+            tileRect.setRect(i * m_rectSize, j * m_rectSize, m_rectSize, m_rectSize);
+            if(sendWithoutCompare || !compareImagesRects(m_currentImage, m_lastImage, tileRect))
             {
-                sendImage(i, j, tileNum, m_tileCurrentImage);
+                sendImage(i, j, tileNum, m_currentImage.copy(tileRect));
                 m_currentTileNum = tileNum;
                 ++tileNum;
                 sendWithoutCompare = tileNum > columnCount;
@@ -155,4 +151,27 @@ bool GraberClass::isSendTilePermit()
     }
 
     return false;
+}
+
+bool GraberClass::compareImagesRects(const QImage &img1, const QImage &img2, const QRect &r)
+{
+    if (img1.depth() != img2.depth())
+        return false;
+
+    if (img1.width() != img2.width())
+        return false;
+
+    int depth = img1.depth() / 8;
+    int bytesPerLine = img1.width() * depth;
+    int lineBegin = r.x() * depth;
+    int size = r.width() * depth;
+
+    for (int i=r.y(); i<(r.y() + r.height()); ++i) {
+        int shift = bytesPerLine * i + lineBegin;
+        if (memcmp(img1.constBits() + shift, img2.constBits() + shift, size) != 0) {
+            return false;
+        }
+    }
+
+    return true;
 }
