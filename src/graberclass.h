@@ -35,7 +35,6 @@ private:
     QImage m_currentImage;
     QImage m_lastImage;
     QImage m_tileCurrentImage;
-    QImage m_tileLastImage;
     QByteArray m_dataToSend;
 
 signals:
@@ -59,4 +58,5 @@ public slots:
 private slots:
     void sendImage(int posX, int posY, int tileNum, const QImage& image);
     bool isSendTilePermit();
+    bool compareImagesRects(const QImage &img1, const QImage &img2, const QRect &r);
 };
